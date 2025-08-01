@@ -1,4 +1,22 @@
 // This folder contains the majority of the project and the GUI, including the majority of any code needed to run and interact
 with the project.
 // The Properties folder inside the GUI folder was manually added- the project will NOT work without it- leave it alone.
-// MainMenu1 is the Main Menu screen where the app will always load to on startup.
+// WindowTemplate is the main form template for the application. It is everything needed to run the GUI and work on coding ready
+to go. When creating a new form (new window, new screen, or new page for the GUI), copy and paste this folder in the File Explorer
+and follow these instructions:
+	* Rename the folder to the name of the new form.
+	* Rename the WindowTemplate.cs file to the name of the new form (name.cs)
+	* Rename the WindowTemplate.Designer.cs file to the name of the new form (name.Designer.cs)
+	* Rename the WindowTemplate.resx file to the name of the new form (name.resx)
+		* Do NOT rename any other files in the folder.
+	* Open the .cs file and change the class name to the name of the new form
+		* public partial class WindowTemplate : Form -> public partial class NewFormName : Form
+		  public WindowTemplate() -> public NewFormName()
+	* Open the .Designer.cs file and change the class name to the name of the new form
+		* partial class WindowTemplate -> partial class NewFormName
+	* Open the GUI.csproj file and replace all instances of "WindowTemplate" with the name of the new form
+		* There are 5 instances.
+	* Open the Program.cs file and replace the instance of "WindowTemplate" with the name of the new form
+		* Applciation.Run(new WindowTemplate()); -> Application.Run(new NewFormName());
+	* To see if done correctly, open the GUI.sln file in the folder, then double click WindowTemplate.cs. If done correctly,
+	it will open the GUI for editing, and if you run the program you should encounter no errors.

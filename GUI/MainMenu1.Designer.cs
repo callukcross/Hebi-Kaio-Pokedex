@@ -1,6 +1,6 @@
 ﻿namespace GUI
 {
-    partial class Form1
+    partial class MainMenu1
     {
         /// <summary>
         /// Required designer variable.
@@ -74,7 +74,7 @@
             this.editProfButton.UseVisualStyleBackColor = true;
             this.editProfButton.Click += new System.EventHandler(this.button3_Click);
             // 
-            // Form1
+            // MainMenu1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -83,8 +83,9 @@
             this.Controls.Add(this.loadProfButton);
             this.Controls.Add(this.createProfButton);
             this.Controls.Add(this.titleText);
-            this.Name = "Form1";
+            this.Name = "MainMenu1";
             this.Text = "Form1";
+            this.Load += new System.EventHandler(this.MainMenu1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

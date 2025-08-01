@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace GUI
 {
-    public partial class Form1 : Form
+    public partial class MainMenu1 : Form
     {
-        public Form1()
+        public MainMenu1()
         {
             InitializeComponent();
         }
@@ -21,15 +21,20 @@ namespace GUI
         {
 
         }
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e) // Create Profile button click event
         {
 
         }
-        private void button2_Click(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e) // Load Profile button click event
         {
 
         }
-        private void button3_Click(object sender, EventArgs e)
+        private void button3_Click(object sender, EventArgs e) // Edit Profile button click event
+        {
+
+        }
+
+        private void MainMenu1_Load(object sender, EventArgs e)
         {
 
         }

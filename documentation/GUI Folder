@@ -1,0 +1,4 @@
+// This folder contains the majority of the project and the GUI, including the majority of any code needed to run and interact
+with the project.
+// The Properties folder inside the GUI folder was manually added- the project will NOT work without it- leave it alone.
+// Form1 is the Main Menu screen.

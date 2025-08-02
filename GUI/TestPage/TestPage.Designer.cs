@@ -78,7 +78,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1144, 633);
+            this.ClientSize = new System.Drawing.Size(750, 842);
             this.Controls.Add(this.editProfButton);
             this.Controls.Add(this.loadProfButton);
             this.Controls.Add(this.createProfButton);

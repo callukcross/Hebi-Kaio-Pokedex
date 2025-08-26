@@ -30,16 +30,15 @@
         {
             this.titleText = new System.Windows.Forms.TextBox();
             this.createProfButton = new System.Windows.Forms.Button();
-            this.loadProfButton = new System.Windows.Forms.Button();
-            this.editProfButton = new System.Windows.Forms.Button();
+            this.testProfile1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // titleText
             // 
-            this.titleText.Location = new System.Drawing.Point(368, 47);
-            this.titleText.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.titleText.Location = new System.Drawing.Point(318, 11);
+            this.titleText.Margin = new System.Windows.Forms.Padding(2);
             this.titleText.Name = "titleText";
-            this.titleText.Size = new System.Drawing.Size(145, 20);
+            this.titleText.Size = new System.Drawing.Size(150, 20);
             this.titleText.TabIndex = 0;
             this.titleText.Text = "HebiKaio Dex";
             this.titleText.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -47,50 +46,35 @@
             // 
             // createProfButton
             // 
-            this.createProfButton.Location = new System.Drawing.Point(368, 116);
-            this.createProfButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.createProfButton.Location = new System.Drawing.Point(318, 400);
+            this.createProfButton.Margin = new System.Windows.Forms.Padding(2);
             this.createProfButton.Name = "createProfButton";
-            this.createProfButton.Size = new System.Drawing.Size(144, 34);
+            this.createProfButton.Size = new System.Drawing.Size(150, 35);
             this.createProfButton.TabIndex = 1;
-            this.createProfButton.Text = "Create Profile";
+            this.createProfButton.Text = "New Profile";
             this.createProfButton.UseVisualStyleBackColor = true;
             this.createProfButton.Click += new System.EventHandler(this.button1_Click);
             // 
-            // loadProfButton
+            // testProfile1
             // 
-            this.loadProfButton.Location = new System.Drawing.Point(368, 206);
-            this.loadProfButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.loadProfButton.Name = "loadProfButton";
-            this.loadProfButton.Size = new System.Drawing.Size(144, 34);
-            this.loadProfButton.TabIndex = 2;
-            this.loadProfButton.Text = "Load Profile";
-            this.loadProfButton.UseVisualStyleBackColor = true;
-            this.loadProfButton.Click += new System.EventHandler(this.button2_Click);
-            // 
-            // editProfButton
-            // 
-            this.editProfButton.Location = new System.Drawing.Point(368, 297);
-            this.editProfButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.editProfButton.Name = "editProfButton";
-            this.editProfButton.Size = new System.Drawing.Size(144, 34);
-            this.editProfButton.TabIndex = 3;
-            this.editProfButton.Text = "Edit Profile";
-            this.editProfButton.UseVisualStyleBackColor = true;
-            this.editProfButton.Click += new System.EventHandler(this.button3_Click);
+            this.testProfile1.Location = new System.Drawing.Point(318, 61);
+            this.testProfile1.Name = "testProfile1";
+            this.testProfile1.Size = new System.Drawing.Size(150, 35);
+            this.testProfile1.TabIndex = 2;
+            this.testProfile1.Text = "Test Profile";
+            this.testProfile1.UseVisualStyleBackColor = true;
             // 
             // MainMenu1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(858, 514);
-            this.Controls.Add(this.editProfButton);
-            this.Controls.Add(this.loadProfButton);
+            this.ClientSize = new System.Drawing.Size(784, 461);
+            this.Controls.Add(this.testProfile1);
             this.Controls.Add(this.createProfButton);
             this.Controls.Add(this.titleText);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "MainMenu1";
             this.Text = "Form1";
-            this.Load += new System.EventHandler(this.MainMenu1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -100,8 +84,7 @@
 
         private System.Windows.Forms.TextBox titleText;
         private System.Windows.Forms.Button createProfButton;
-        private System.Windows.Forms.Button loadProfButton;
-        private System.Windows.Forms.Button editProfButton;
+        private System.Windows.Forms.Button testProfile1;
     }
 }
 

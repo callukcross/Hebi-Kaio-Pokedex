@@ -54,6 +54,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResizableForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="MainMenu1.resx">
       <DependentUpon>MainMenu1.cs</DependentUpon>
     </EmbeddedResource>

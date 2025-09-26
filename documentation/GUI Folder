@@ -11,7 +11,9 @@ and follow these instructions:
 		* Do NOT rename any other files in the folder.
 	* Open the .cs file and change the class name to the name of the new form
 		* public partial class WindowTemplate : Form -> public partial class NewFormName : Form
-		  public WindowTemplate() -> public NewFormName()
+			- To enable automatic resizing and desine view placments, change Form to ResizableForm
+			- change public partial class NewFormName : Form -> public partial class NewFormName : ResizableForm
+		* public WindowTemplate() -> public NewFormName() 
 	* Open the .Designer.cs file and change the class name to the name of the new form
 		* partial class WindowTemplate -> partial class NewFormName
 	* Open the GUI.csproj file and replace all instances of "WindowTemplate" with the name of the new form

@@ -49,16 +49,16 @@
     <Compile Include="ResizableForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="WindowTemplate.cs">
+    <Compile Include="SelectedProfile.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="WindowTemplate.Designer.cs">
-      <DependentUpon>WindowTemplate.cs</DependentUpon>
+    <Compile Include="SelectedProfile.Designer.cs">
+      <DependentUpon>SelectedProfile.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="WindowTemplate.resx">
-      <DependentUpon>WindowTemplate.cs</DependentUpon>
+    <EmbeddedResource Include="SelectedProfile.resx">
+      <DependentUpon>SelectedProfile.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

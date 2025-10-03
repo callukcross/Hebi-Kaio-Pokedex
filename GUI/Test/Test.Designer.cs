@@ -1,6 +1,6 @@
 ﻿namespace GUI
 {
-    partial class SelectedProfile
+    partial class Test
     {
         /// <summary>
         /// Required designer variable.

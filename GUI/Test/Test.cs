@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -9,9 +10,9 @@ using System.Windows.Forms;
 
 namespace GUI
 {
-    public partial class SelectedProfile : ResizableForm
+    public partial class Test : ResizableForm
     {
-        public SelectedProfile()
+        public Test()
         {
             InitializeComponent();
         }

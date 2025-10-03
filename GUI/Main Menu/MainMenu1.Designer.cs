@@ -57,7 +57,7 @@
             // 
             // testProfile1
             // 
-            this.testProfile1.Location = new System.Drawing.Point(318, 61);
+            this.testProfile1.Location = new System.Drawing.Point(318, 76);
             this.testProfile1.Name = "testProfile1";
             this.testProfile1.Size = new System.Drawing.Size(150, 35);
             this.testProfile1.TabIndex = 2;

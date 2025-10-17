@@ -35,10 +35,10 @@
             // 
             // titleText
             // 
-            this.titleText.Location = new System.Drawing.Point(318, 11);
-            this.titleText.Margin = new System.Windows.Forms.Padding(2);
+            this.titleText.Location = new System.Drawing.Point(424, 14);
+            this.titleText.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.titleText.Name = "titleText";
-            this.titleText.Size = new System.Drawing.Size(150, 20);
+            this.titleText.Size = new System.Drawing.Size(199, 22);
             this.titleText.TabIndex = 0;
             this.titleText.Text = "HebiKaio Dex";
             this.titleText.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -46,10 +46,10 @@
             // 
             // createProfButton
             // 
-            this.createProfButton.Location = new System.Drawing.Point(318, 400);
-            this.createProfButton.Margin = new System.Windows.Forms.Padding(2);
+            this.createProfButton.Location = new System.Drawing.Point(424, 492);
+            this.createProfButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.createProfButton.Name = "createProfButton";
-            this.createProfButton.Size = new System.Drawing.Size(150, 35);
+            this.createProfButton.Size = new System.Drawing.Size(200, 43);
             this.createProfButton.TabIndex = 1;
             this.createProfButton.Text = "New Profile";
             this.createProfButton.UseVisualStyleBackColor = true;
@@ -57,22 +57,23 @@
             // 
             // testProfile1
             // 
-            this.testProfile1.Location = new System.Drawing.Point(318, 76);
+            this.testProfile1.Location = new System.Drawing.Point(424, 94);
+            this.testProfile1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.testProfile1.Name = "testProfile1";
-            this.testProfile1.Size = new System.Drawing.Size(150, 35);
+            this.testProfile1.Size = new System.Drawing.Size(200, 43);
             this.testProfile1.TabIndex = 2;
             this.testProfile1.Text = "Test Profile";
             this.testProfile1.UseVisualStyleBackColor = true;
             // 
             // MainMenu1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 461);
             this.Controls.Add(this.testProfile1);
             this.Controls.Add(this.createProfButton);
             this.Controls.Add(this.titleText);
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "MainMenu1";
             this.Text = "Form1";
             this.ResumeLayout(false);

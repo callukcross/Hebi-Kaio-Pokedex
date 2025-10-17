@@ -28,9 +28,30 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.profileSelect = new System.Windows.Forms.Button();
+            this.SuspendLayout();
+            // 
+            // profileSelect
+            // 
+            this.profileSelect.Location = new System.Drawing.Point(318, 78);
+            this.profileSelect.Name = "profileSelect";
+            this.profileSelect.Size = new System.Drawing.Size(150, 35);
+            this.profileSelect.TabIndex = 0;
+            this.profileSelect.Text = "Profile Select";
+            this.profileSelect.UseVisualStyleBackColor = true;
+            this.profileSelect.Click += new System.EventHandler(this.profileSelect_Click);
+            // 
+            // Profile
+            // 
+            this.ClientSize = new System.Drawing.Size(784, 461);
+            this.Controls.Add(this.profileSelect);
+            this.Name = "Profile";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private System.Windows.Forms.Button profileSelect;
     }
 }

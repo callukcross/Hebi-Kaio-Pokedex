@@ -14,5 +14,10 @@ namespace GUI
         {
             InitializeComponent();
         }
+
+        private void profileSelect_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

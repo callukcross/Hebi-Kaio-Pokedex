@@ -46,6 +46,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PokemonActivePartyScreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PokemonActivePartyScreen.Designer.cs">
+      <DependentUpon>PokemonActivePartyScreen.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainMenu1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -65,6 +71,9 @@
     </Compile>
     <EmbeddedResource Include="MainMenu1.resx">
       <DependentUpon>MainMenu1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PokemonActivePartyScreen.resx">
+      <DependentUpon>PokemonActivePartyScreen.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Profile.resx">
       <DependentUpon>Profile.cs</DependentUpon>

@@ -35,10 +35,10 @@
             // 
             // titleText
             // 
-            this.titleText.Location = new System.Drawing.Point(318, 11);
-            this.titleText.Margin = new System.Windows.Forms.Padding(2);
+            this.titleText.Location = new System.Drawing.Point(424, 14);
+            this.titleText.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.titleText.Name = "titleText";
-            this.titleText.Size = new System.Drawing.Size(150, 20);
+            this.titleText.Size = new System.Drawing.Size(199, 22);
             this.titleText.TabIndex = 0;
             this.titleText.Text = "HebiKaio Dex";
             this.titleText.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -66,13 +66,13 @@
             // 
             // MainMenu1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 461);
             this.Controls.Add(this.testProfile);
             this.Controls.Add(this.newProfile);
             this.Controls.Add(this.titleText);
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "MainMenu1";
             this.Text = "Form1";
             this.ResumeLayout(false);

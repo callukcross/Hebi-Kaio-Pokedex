@@ -69,6 +69,18 @@
             this.confuseIcon = new System.Windows.Forms.PictureBox();
             this.hpDisplayBar = new System.Windows.Forms.ProgressBar();
             this.hpTextDisplay = new System.Windows.Forms.Label();
+            this.typeInteractionsList = new System.Windows.Forms.PictureBox();
+            this.speedsAndSensesDisplay = new System.Windows.Forms.PictureBox();
+            this.profileButton = new System.Windows.Forms.Button();
+            this.movesButton = new System.Windows.Forms.Button();
+            this.traitsButtton = new System.Windows.Forms.Button();
+            this.pokemonSlot1Button = new System.Windows.Forms.PictureBox();
+            this.pokemonSlot2Button = new System.Windows.Forms.PictureBox();
+            this.pokemonSlot3Button = new System.Windows.Forms.PictureBox();
+            this.pokemonSlot4Button = new System.Windows.Forms.PictureBox();
+            this.pokemonSlot5Button = new System.Windows.Forms.PictureBox();
+            this.pokemonSlot6Button = new System.Windows.Forms.PictureBox();
+            this.pokemonPCButton = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.typeIcon1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.typeIcon2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pokemonPortraitImage)).BeginInit();
@@ -80,6 +92,15 @@
             ((System.ComponentModel.ISupportInitialize)(this.paralysisIcon)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.sleepIcon)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.confuseIcon)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.typeInteractionsList)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.speedsAndSensesDisplay)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot1Button)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot2Button)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot3Button)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot4Button)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot5Button)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot6Button)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonPCButton)).BeginInit();
             this.SuspendLayout();
             // 
             // pokemonSpeciesNameText
@@ -494,9 +515,133 @@
             this.hpTextDisplay.Text = "HP: ??? / ???";
             this.hpTextDisplay.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
+            // typeInteractionsList
+            // 
+            this.typeInteractionsList.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.typeInteractionsList.Location = new System.Drawing.Point(9, 547);
+            this.typeInteractionsList.Name = "typeInteractionsList";
+            this.typeInteractionsList.Size = new System.Drawing.Size(646, 83);
+            this.typeInteractionsList.TabIndex = 40;
+            this.typeInteractionsList.TabStop = false;
+            // 
+            // speedsAndSensesDisplay
+            // 
+            this.speedsAndSensesDisplay.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.speedsAndSensesDisplay.Location = new System.Drawing.Point(9, 636);
+            this.speedsAndSensesDisplay.Name = "speedsAndSensesDisplay";
+            this.speedsAndSensesDisplay.Size = new System.Drawing.Size(646, 83);
+            this.speedsAndSensesDisplay.TabIndex = 41;
+            this.speedsAndSensesDisplay.TabStop = false;
+            // 
+            // profileButton
+            // 
+            this.profileButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.profileButton.Location = new System.Drawing.Point(9, 762);
+            this.profileButton.Name = "profileButton";
+            this.profileButton.Size = new System.Drawing.Size(110, 40);
+            this.profileButton.TabIndex = 42;
+            this.profileButton.Text = "Profile";
+            this.profileButton.UseVisualStyleBackColor = true;
+            // 
+            // movesButton
+            // 
+            this.movesButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.movesButton.Location = new System.Drawing.Point(268, 762);
+            this.movesButton.Name = "movesButton";
+            this.movesButton.Size = new System.Drawing.Size(110, 40);
+            this.movesButton.TabIndex = 43;
+            this.movesButton.Text = "Moves";
+            this.movesButton.UseVisualStyleBackColor = true;
+            // 
+            // traitsButtton
+            // 
+            this.traitsButtton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.traitsButtton.Location = new System.Drawing.Point(545, 762);
+            this.traitsButtton.Name = "traitsButtton";
+            this.traitsButtton.Size = new System.Drawing.Size(110, 40);
+            this.traitsButtton.TabIndex = 44;
+            this.traitsButtton.Text = "Traits";
+            this.traitsButtton.UseVisualStyleBackColor = true;
+            // 
+            // pokemonSlot1Button
+            // 
+            this.pokemonSlot1Button.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonSlot1Button.Location = new System.Drawing.Point(10, 820);
+            this.pokemonSlot1Button.Name = "pokemonSlot1Button";
+            this.pokemonSlot1Button.Size = new System.Drawing.Size(60, 60);
+            this.pokemonSlot1Button.TabIndex = 45;
+            this.pokemonSlot1Button.TabStop = false;
+            // 
+            // pokemonSlot2Button
+            // 
+            this.pokemonSlot2Button.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonSlot2Button.Location = new System.Drawing.Point(100, 820);
+            this.pokemonSlot2Button.Name = "pokemonSlot2Button";
+            this.pokemonSlot2Button.Size = new System.Drawing.Size(60, 60);
+            this.pokemonSlot2Button.TabIndex = 46;
+            this.pokemonSlot2Button.TabStop = false;
+            // 
+            // pokemonSlot3Button
+            // 
+            this.pokemonSlot3Button.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonSlot3Button.Location = new System.Drawing.Point(190, 820);
+            this.pokemonSlot3Button.Name = "pokemonSlot3Button";
+            this.pokemonSlot3Button.Size = new System.Drawing.Size(60, 60);
+            this.pokemonSlot3Button.TabIndex = 47;
+            this.pokemonSlot3Button.TabStop = false;
+            // 
+            // pokemonSlot4Button
+            // 
+            this.pokemonSlot4Button.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonSlot4Button.Location = new System.Drawing.Point(280, 820);
+            this.pokemonSlot4Button.Name = "pokemonSlot4Button";
+            this.pokemonSlot4Button.Size = new System.Drawing.Size(60, 60);
+            this.pokemonSlot4Button.TabIndex = 48;
+            this.pokemonSlot4Button.TabStop = false;
+            // 
+            // pokemonSlot5Button
+            // 
+            this.pokemonSlot5Button.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonSlot5Button.Location = new System.Drawing.Point(370, 820);
+            this.pokemonSlot5Button.Name = "pokemonSlot5Button";
+            this.pokemonSlot5Button.Size = new System.Drawing.Size(60, 60);
+            this.pokemonSlot5Button.TabIndex = 49;
+            this.pokemonSlot5Button.TabStop = false;
+            // 
+            // pokemonSlot6Button
+            // 
+            this.pokemonSlot6Button.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonSlot6Button.Location = new System.Drawing.Point(460, 820);
+            this.pokemonSlot6Button.Name = "pokemonSlot6Button";
+            this.pokemonSlot6Button.Size = new System.Drawing.Size(60, 60);
+            this.pokemonSlot6Button.TabIndex = 50;
+            this.pokemonSlot6Button.TabStop = false;
+            // 
+            // pokemonPCButton
+            // 
+            this.pokemonPCButton.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pokemonPCButton.Location = new System.Drawing.Point(540, 820);
+            this.pokemonPCButton.Name = "pokemonPCButton";
+            this.pokemonPCButton.Size = new System.Drawing.Size(60, 60);
+            this.pokemonPCButton.TabIndex = 51;
+            this.pokemonPCButton.TabStop = false;
+            // 
             // PokemonActivePartyScreen
             // 
-            this.ClientSize = new System.Drawing.Size(667, 884);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
+            this.ClientSize = new System.Drawing.Size(667, 912);
+            this.Controls.Add(this.pokemonPCButton);
+            this.Controls.Add(this.pokemonSlot6Button);
+            this.Controls.Add(this.pokemonSlot5Button);
+            this.Controls.Add(this.pokemonSlot4Button);
+            this.Controls.Add(this.pokemonSlot3Button);
+            this.Controls.Add(this.pokemonSlot2Button);
+            this.Controls.Add(this.pokemonSlot1Button);
+            this.Controls.Add(this.traitsButtton);
+            this.Controls.Add(this.movesButton);
+            this.Controls.Add(this.profileButton);
+            this.Controls.Add(this.speedsAndSensesDisplay);
+            this.Controls.Add(this.typeInteractionsList);
             this.Controls.Add(this.hpTextDisplay);
             this.Controls.Add(this.hpDisplayBar);
             this.Controls.Add(this.confuseIcon);
@@ -550,6 +695,15 @@
             ((System.ComponentModel.ISupportInitialize)(this.paralysisIcon)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.sleepIcon)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.confuseIcon)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.typeInteractionsList)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.speedsAndSensesDisplay)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot1Button)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot2Button)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot3Button)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot4Button)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot5Button)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonSlot6Button)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pokemonPCButton)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -598,5 +752,17 @@
         private System.Windows.Forms.PictureBox confuseIcon;
         private System.Windows.Forms.ProgressBar hpDisplayBar;
         private System.Windows.Forms.Label hpTextDisplay;
+        private System.Windows.Forms.PictureBox typeInteractionsList;
+        private System.Windows.Forms.PictureBox speedsAndSensesDisplay;
+        private System.Windows.Forms.Button profileButton;
+        private System.Windows.Forms.Button movesButton;
+        private System.Windows.Forms.Button traitsButtton;
+        private System.Windows.Forms.PictureBox pokemonSlot1Button;
+        private System.Windows.Forms.PictureBox pokemonSlot2Button;
+        private System.Windows.Forms.PictureBox pokemonSlot3Button;
+        private System.Windows.Forms.PictureBox pokemonSlot4Button;
+        private System.Windows.Forms.PictureBox pokemonSlot5Button;
+        private System.Windows.Forms.PictureBox pokemonSlot6Button;
+        private System.Windows.Forms.PictureBox pokemonPCButton;
     }
 }

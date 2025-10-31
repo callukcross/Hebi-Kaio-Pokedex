@@ -14,5 +14,9 @@ namespace GUI
         {
             InitializeComponent();
         }
+
+        private void PokemonActivePartyScreen_Load(object sender, EventArgs e)
+        {
+
+        }
     }
-}

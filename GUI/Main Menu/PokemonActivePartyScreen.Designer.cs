@@ -557,8 +557,6 @@
 
         #endregion
 
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label pokemonSpeciesNameText;
         private System.Windows.Forms.TextBox pokemonNicknameTextbox;
         private System.Windows.Forms.PictureBox typeIcon1;

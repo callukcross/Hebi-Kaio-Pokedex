@@ -34,25 +34,25 @@ namespace GUI
             // Remove them from the form (do not Dispose; we'll re-add them).
             Controls.Clear();
 
-            // Create the Profile form and embed it as a child control.
-            var profileForm = new Profile
+            // Create the PokemonActivePartyScreen form and embed it as a child control.
+            var partyForm = new PokemonActivePartyScreen
             {
                 TopLevel = false,                       // make it a child control
                 FormBorderStyle = FormBorderStyle.None, // remove window chrome
                 Dock = DockStyle.Fill                    // fill the client area exactly
             };
 
-            // When profileForm is closed (e.g. a "Back" button inside it calls Close()),
+            // When partyForm is closed (radial button will call Close()),
             // restore the original controls. Use BeginInvoke to avoid re-entrancy issues.
-            profileForm.FormClosed += (s, args) =>
+            partyForm.FormClosed += (s, args) =>
             {
                 BeginInvoke((Action)(() => RestoreMainView()));
             };
 
             // Add the embedded form to this form's Controls and show it.
-            Controls.Add(profileForm);
-            _embeddedProfile = profileForm;
-            profileForm.Show();
+            Controls.Add(partyForm);
+            _embeddedProfile = partyForm;
+            partyForm.Show();
         }
 
         private void RestoreMainView()

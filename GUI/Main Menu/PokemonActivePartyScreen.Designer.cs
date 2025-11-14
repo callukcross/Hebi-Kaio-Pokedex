@@ -1,6 +1,6 @@
 ﻿namespace GUI
 {
-    partial class ActiveParty
+    partial class PokemonActivePartyScreen
     {
         /// <summary>
         /// Required designer variable.

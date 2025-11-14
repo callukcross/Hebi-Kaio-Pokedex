@@ -2,9 +2,9 @@
 
 namespace GUI
 {
-    public partial class ActiveParty : GUI.ResizableForm
+    public partial class PokemonActivePartyScreen : GUI.ResizableForm
     {
-        public ActiveParty()
+        public PokemonActivePartyScreen()
         {
             InitializeComponent();
 

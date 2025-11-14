@@ -31,27 +31,39 @@ namespace GUI
             _mainControls = Controls.Cast<Control>().ToList();
 
             // Remove them from the form (do not Dispose; we'll re-add them).
-            Controls.Clear();
-
-            // Create the PokemonActivePartyScreen form and embed it as a child control.
-            var partyForm = new PokemonActivePartyScreen
+            // Suspend layout while we clear and add to avoid repeated layout passes.
+            this.SuspendLayout();
+            try
             {
-                TopLevel = false,                       // make it a child control
-                FormBorderStyle = FormBorderStyle.None, // remove window chrome
-                Dock = DockStyle.Fill                    // fill the client area exactly
-            };
+                Controls.Clear();
 
-            // When partyForm is closed (radial button will call Close()),
-            // restore the original controls. Use BeginInvoke to avoid re-entrancy issues.
-            partyForm.FormClosed += (s, args) =>
+                // Create the PokemonActivePartyScreen form and embed it as a child control.
+                var partyForm = new PokemonActivePartyScreen
+                {
+                    TopLevel = false,                       // make it a child control
+                    FormBorderStyle = FormBorderStyle.None, // remove window chrome
+                    Dock = DockStyle.Fill                    // fill the client area exactly
+                };
+
+                // When partyForm is closed (radial button will call Close()),
+                // restore the original controls. Use BeginInvoke to avoid re-entrancy issues.
+                partyForm.FormClosed += (s, args) =>
+                {
+                    BeginInvoke((Action)(() => RestoreMainView()));
+                };
+
+                // Add the embedded form to this form's Controls and show it.
+                Controls.Add(partyForm);
+                _embeddedProfile = partyForm;
+                partyForm.Show();
+            }
+            finally
             {
-                BeginInvoke((Action)(() => RestoreMainView()));
-            };
-
-            // Add the embedded form to this form's Controls and show it.
-            Controls.Add(partyForm);
-            _embeddedProfile = partyForm;
-            partyForm.Show();
+                this.ResumeLayout();
+                // Force immediate repaint to reduce visual artifacts when switching pages quickly.
+                this.Invalidate(true);
+                this.Update();
+            }
         }
 
         private void RestoreMainView()
@@ -69,8 +81,12 @@ namespace GUI
             // Restore the original controls
             if (_mainControls != null)
             {
+                this.SuspendLayout();
                 Controls.AddRange(_mainControls.ToArray());
                 _mainControls = null;
+                this.ResumeLayout();
+                this.Invalidate(true);
+                this.Update();
             }
         }
 

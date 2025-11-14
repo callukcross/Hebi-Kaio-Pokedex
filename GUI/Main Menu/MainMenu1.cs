@@ -158,8 +158,17 @@ namespace GUI
                 if (_newProfileDialog == dlg) _newProfileDialog = null;
             };
 
-            // Show the dialog and compute offset after it's been shown so Location is valid.
+            // Show the dialog modelessly.
             dlg.Show(this);
+
+            // Position dialog centered over the main form initially.
+            try
+            {
+                var x = this.Left + (this.Width - dlg.Width) / 2;
+                var y = this.Top + (this.Height - dlg.Height) / 2;
+                dlg.Location = new Point(x, y);
+            }
+            catch { }
 
             // Compute how far the dialog is from the main window, then keep that offset.
             offset = new Point(dlg.Location.X - this.Location.X, dlg.Location.Y - this.Location.Y);

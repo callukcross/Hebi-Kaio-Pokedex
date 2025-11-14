@@ -38,7 +38,7 @@ namespace GUI
                 Controls.Clear();
 
                 // Create the PokemonActivePartyScreen form and embed it as a child control.
-                var partyForm = new PokemonActivePartyScreen
+                var partyForm = new ActiveParty
                 {
                     TopLevel = false,                       // make it a child control
                     FormBorderStyle = FormBorderStyle.None, // remove window chrome

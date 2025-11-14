@@ -52,6 +52,12 @@
     <Compile Include="ActiveParty.Designer.cs">
       <DependentUpon>ActiveParty.cs</DependentUpon>
     </Compile>
+    <Compile Include="EditPokemon.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EditPokemon.Designer.cs">
+      <DependentUpon>EditPokemon.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainMenu1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -63,6 +69,9 @@
     <Compile Include="ResizableForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <EmbeddedResource Include="EditPokemon.resx">
+      <DependentUpon>EditPokemon.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainMenu1.resx">
       <DependentUpon>MainMenu1.cs</DependentUpon>
     </EmbeddedResource>

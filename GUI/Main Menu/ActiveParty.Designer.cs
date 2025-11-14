@@ -620,13 +620,13 @@
             // pokemonPCButton
             // 
             this.pokemonPCButton.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pokemonPCButton.Location = new System.Drawing.Point(540, 820);
+            this.pokemonPCButton.Location = new System.Drawing.Point(580, 820);
             this.pokemonPCButton.Name = "pokemonPCButton";
             this.pokemonPCButton.Size = new System.Drawing.Size(60, 60);
             this.pokemonPCButton.TabIndex = 51;
             this.pokemonPCButton.TabStop = false;
             // 
-            // PokemonActivePartyScreen
+            // ActiveParty
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.ClientSize = new System.Drawing.Size(667, 912);
@@ -682,7 +682,7 @@
             this.Controls.Add(this.typeIcon1);
             this.Controls.Add(this.pokemonNicknameTextbox);
             this.Controls.Add(this.pokemonSpeciesNameText);
-            this.Name = "PokemonActivePartyScreen";
+            this.Name = "ActiveParty";
             this.Load += new System.EventHandler(this.PokemonActivePartyScreen_Load);
             ((System.ComponentModel.ISupportInitialize)(this.typeIcon1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.typeIcon2)).EndInit();

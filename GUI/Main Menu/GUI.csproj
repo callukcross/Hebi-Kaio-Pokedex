@@ -46,7 +46,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PokemonActivePartyScreen.cs" />
+    <Compile Include="PokemonActivePartyScreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="PokemonActivePartyScreen.Designer.cs">
       <DependentUpon>PokemonActivePartyScreen.cs</DependentUpon>
     </Compile>

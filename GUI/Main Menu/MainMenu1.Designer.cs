@@ -36,7 +36,7 @@
             // titleText
             // 
             this.titleText.Location = new System.Drawing.Point(222, 11);
-            this.titleText.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.titleText.Margin = new System.Windows.Forms.Padding(2);
             this.titleText.Name = "titleText";
             this.titleText.Size = new System.Drawing.Size(150, 20);
             this.titleText.TabIndex = 0;
@@ -47,7 +47,7 @@
             // newProfile
             // 
             this.newProfile.Location = new System.Drawing.Point(238, 327);
-            this.newProfile.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.newProfile.Margin = new System.Windows.Forms.Padding(2);
             this.newProfile.Name = "newProfile";
             this.newProfile.Size = new System.Drawing.Size(112, 28);
             this.newProfile.TabIndex = 3;
@@ -58,7 +58,7 @@
             // testProfile
             // 
             this.testProfile.Location = new System.Drawing.Point(238, 63);
-            this.testProfile.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.testProfile.Margin = new System.Windows.Forms.Padding(2);
             this.testProfile.Name = "testProfile";
             this.testProfile.Size = new System.Drawing.Size(112, 28);
             this.testProfile.TabIndex = 4;
@@ -70,11 +70,11 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(588, 375);
+            this.ClientSize = new System.Drawing.Size(667, 912);
             this.Controls.Add(this.testProfile);
             this.Controls.Add(this.newProfile);
             this.Controls.Add(this.titleText);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "MainMenu1";
             this.Text = "Form1";
             this.ResumeLayout(false);

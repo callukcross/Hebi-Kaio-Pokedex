@@ -7,4 +7,6 @@ public sealed class TrainerUpdate
     public AbilityScores Abilities { get; init; } = new();
 
     public IReadOnlyList<string> Feats { get; init; } = [];
+
+    public ManualTrainerModifiers? ManualModifiers { get; init; }
 }

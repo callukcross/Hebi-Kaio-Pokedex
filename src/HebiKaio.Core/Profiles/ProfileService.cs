@@ -62,6 +62,30 @@ public sealed class ProfileService
         _repository.Save(store);
     }
 
+    public void RenameProfile(Guid profileId, string name)
+    {
+        var normalized = NormalizeName(name);
+        var store = _repository.Load();
+        var profile = store.Profiles.SingleOrDefault(item => item.Id == profileId)
+            ?? throw new KeyNotFoundException("The requested profile does not exist.");
+        if (store.Profiles.Any(item => item.Id != profileId && string.Equals(item.Name, normalized, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException($"A profile named '{normalized}' already exists.");
+        profile.Name = normalized;
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+    }
+
+    public void DeleteProfile(Guid profileId)
+    {
+        var store = _repository.Load();
+        var profile = store.Profiles.SingleOrDefault(item => item.Id == profileId)
+            ?? throw new KeyNotFoundException("The requested profile does not exist.");
+        store.Profiles.Remove(profile);
+        if (store.ActiveProfileId == profileId)
+            store.ActiveProfileId = store.Profiles.OrderByDescending(item => item.UpdatedAtUtc).FirstOrDefault()?.Id;
+        _repository.Save(store);
+    }
+
     public PokedexEntryState GetPokedexState(int speciesNumber)
     {
         var profile = GetRequiredActiveProfile(_repository.Load());
@@ -74,6 +98,22 @@ public sealed class ProfileService
     {
         var profile = GetRequiredActiveProfile(_repository.Load());
         return new Dictionary<int, PokedexEntryState>(profile.Pokedex);
+    }
+
+    public void SetPokedexStates(IEnumerable<int> speciesNumbers, PokedexEntryState state)
+    {
+        ArgumentNullException.ThrowIfNull(speciesNumbers);
+        var numbers = speciesNumbers.Distinct().ToList();
+        if (numbers.Any(number => number < 1)) throw new ArgumentOutOfRangeException(nameof(speciesNumbers));
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        foreach (var number in numbers)
+        {
+            if (state == PokedexEntryState.Unknown) profile.Pokedex.Remove(number); else profile.Pokedex[number] = state;
+        }
+        RefreshTrainerLevel(profile);
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
     }
 
     public void SetPokedexState(int speciesNumber, PokedexEntryState state)
@@ -123,6 +163,7 @@ public sealed class ProfileService
             Level = draft.Level,
             CustomImagePath = NormalizeOptional(draft.CustomImagePath, 500, nameof(draft.CustomImagePath))
         };
+        ApplyAdvancedDraft(pokemon, draft);
 
         profile.Pokemon.Add(pokemon);
         profile.Pokedex[pokemon.SpeciesNumber] = PokedexEntryState.Caught;
@@ -140,6 +181,7 @@ public sealed class ProfileService
         var profile = GetRequiredActiveProfile(store);
         var pokemon = profile.Pokemon.Single(item => item.Id == created.Id);
         PokemonRulesService.Initialize(pokemon, rules);
+        ApplyAdvancedDraft(pokemon, draft, rules);
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
         _repository.Save(store);
         return ClonePokemon(pokemon);
@@ -202,7 +244,20 @@ public sealed class ProfileService
         pokemon.Form = NormalizeOptional(draft.Form, 40, nameof(draft.Form));
         pokemon.Level = draft.Level;
         pokemon.CustomImagePath = NormalizeOptional(draft.CustomImagePath, 500, nameof(draft.CustomImagePath));
+        ApplyAdvancedDraft(pokemon, draft);
         profile.Pokedex[pokemon.SpeciesNumber] = PokedexEntryState.Caught;
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+        return ClonePokemon(pokemon);
+    }
+
+    public OwnedPokemon UpdatePokemon(Guid pokemonId, PokemonDraft draft, ReferenceRulesCatalog rules)
+    {
+        var updated = UpdatePokemon(pokemonId, draft);
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        var pokemon = profile.Pokemon.Single(item => item.Id == updated.Id);
+        ApplyAdvancedDraft(pokemon, draft, rules);
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
         _repository.Save(store);
         return ClonePokemon(pokemon);
@@ -234,7 +289,8 @@ public sealed class ProfileService
         }
         else
         {
-            if (profile.PartyPokemonIds.Count >= MaximumPartySize)
+            var maximumPartySize = Math.Clamp(profile.Trainer.ManualModifiers?.MaximumActivePokemon ?? MaximumPartySize, 1, 12);
+            if (profile.PartyPokemonIds.Count >= maximumPartySize)
                 throw new InvalidOperationException($"A party can contain at most {MaximumPartySize} Pokémon.");
 
             var insertAt = Math.Clamp(targetIndex ?? profile.PartyPokemonIds.Count, 0, profile.PartyPokemonIds.Count);
@@ -291,6 +347,8 @@ public sealed class ProfileService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(feat => feat)
             .ToList();
+        if (update.ManualModifiers is not null)
+            profile.Trainer.ManualModifiers = CloneManualModifiers(update.ManualModifiers);
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
         _repository.Save(store);
     }
@@ -384,6 +442,26 @@ public sealed class ProfileService
         profile.TrainerLevel = Math.Max(profile.TrainerLevel, TrainerRulesService.CalculateMilestoneLevel(caught));
     }
 
+    private static void ApplyAdvancedDraft(OwnedPokemon pokemon, PokemonDraft draft, ReferenceRulesCatalog? rules = null)
+    {
+        if (draft.Gender is { } gender) pokemon.Gender = gender;
+        if (draft.IsShiny is { } shiny) pokemon.IsShiny = shiny;
+        if (!string.IsNullOrWhiteSpace(draft.Nature)) pokemon.Nature = draft.Nature.Trim();
+        if (draft.HeldItem is not null) pokemon.HeldItem = NormalizeOptional(draft.HeldItem, 80, nameof(draft.HeldItem));
+        if (draft.AttributeIncreases is not null) pokemon.AttributeIncreases = CloneAbilities(draft.AttributeIncreases);
+        if (draft.CustomAttributes is not null) pokemon.CustomAttributes = CloneAbilities(draft.CustomAttributes);
+        if (draft.Abilities is not null) pokemon.Abilities = NormalizeList(draft.Abilities, 80);
+        if (draft.Feats is not null) pokemon.Feats = NormalizeList(draft.Feats, 80);
+        if (draft.Skills is not null) pokemon.Skills = NormalizeList(draft.Skills, 80);
+        if (draft.Moves is not null)
+            pokemon.Moves = draft.Moves.Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).Take(12)
+                .Select(name => name.Trim()).Select(name => new OwnedPokemonMove { Name = name, CurrentPowerPoints = rules?.FindMove(name)?.PowerPoints ?? pokemon.Moves.FirstOrDefault(move => string.Equals(move.Name, name, StringComparison.OrdinalIgnoreCase))?.CurrentPowerPoints ?? 0 }).ToList();
+    }
+
+    private static List<string> NormalizeList(IEnumerable<string> values, int maxLength) => values
+        .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()).Where(value => value.Length <= maxLength)
+        .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
     private static string? NormalizeOptional(string? value, int maximumLength, string parameterName)
     {
         var normalized = value?.Trim();
@@ -438,7 +516,24 @@ public sealed class ProfileService
         ClassName = trainer.ClassName,
         Abilities = CloneAbilities(trainer.Abilities),
         Feats = trainer.Feats.ToList(),
-        Inventory = trainer.Inventory.Select(CloneInventoryEntry).ToList()
+        Inventory = trainer.Inventory.Select(CloneInventoryEntry).ToList(),
+        ManualModifiers = CloneManualModifiers(trainer.ManualModifiers)
+    };
+
+    private static ManualTrainerModifiers CloneManualModifiers(ManualTrainerModifiers modifiers) => new()
+    {
+        Attack = modifiers.Attack,
+        Damage = modifiers.Damage,
+        Stab = modifiers.Stab,
+        MoveSlots = modifiers.MoveSlots,
+        AbilityScoreIncreases = modifiers.AbilityScoreIncreases,
+        EvolutionLevel = modifiers.EvolutionLevel,
+        MaximumActivePokemon = Math.Clamp(modifiers.MaximumActivePokemon, 1, 12),
+        PokemonAttributes = CloneAbilities(modifiers.PokemonAttributes),
+        TypeAttack = new Dictionary<string, int>(modifiers.TypeAttack, StringComparer.OrdinalIgnoreCase),
+        TypeDamage = new Dictionary<string, int>(modifiers.TypeDamage, StringComparer.OrdinalIgnoreCase),
+        TypeStab = new Dictionary<string, int>(modifiers.TypeStab, StringComparer.OrdinalIgnoreCase),
+        AlwaysUseStabTypes = new HashSet<string>(modifiers.AlwaysUseStabTypes, StringComparer.OrdinalIgnoreCase)
     };
 
     private static AbilityScores CloneAbilities(AbilityScores abilities) => new()

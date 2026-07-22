@@ -22,6 +22,8 @@ Run("validated custom modules extend trainer catalogs", CustomModulesExtendCatal
 Run("conflicting custom content is rejected", ConflictingCustomContentIsRejected, failures);
 Run("complete reference rules catalog loads", CompleteReferenceRulesLoad, failures);
 Run("reference pokemon initialize and battle state persists", ReferencePokemonBattleStatePersists, failures);
+Run("profile management and manual trainer modifiers persist", ProfileAndManualTrainerControlsPersist, failures);
+Run("bulk pokedex marking and pokemon transfer persist", BulkPokedexAndPokemonTransferPersist, failures);
 
 if (failures.Count > 0)
 {
@@ -295,6 +297,58 @@ static void ReferencePokemonBattleStatePersists()
     service.HealParty(rules);
     var healed = service.GetOwnedPokemon().Single();
     Assert(healed.CurrentHp > 2 && healed.TemporaryHp == 0 && healed.Statuses.Count == 0 && healed.Moves.Single(move => move.Name == "Tackle").CurrentPowerPoints == 20, "Full rest did not restore party battle state.");
+    service.UpdatePokemon(healed.Id, new PokemonDraft
+    {
+        SpeciesNumber = 1, SpeciesName = "Bulbasaur", Nickname = "Buddy", Level = 5,
+        Gender = PokemonGender.Male, IsShiny = true, Nature = "Brave", HeldItem = "Potion",
+        Abilities = ["Overgrow"], Feats = ["Tough"], Skills = ["Nature"], Moves = ["Tackle", "Growl"],
+        AttributeIncreases = new AbilityScores { Strength = 2, Dexterity = 0, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 },
+        CustomAttributes = new AbilityScores { Strength = 0, Dexterity = 1, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 }
+    }, rules);
+    var edited = service.GetOwnedPokemon().Single();
+    Assert(edited.Gender == PokemonGender.Male && edited.IsShiny && edited.Nature == "Brave" && edited.HeldItem == "Potion", "Advanced identity fields did not persist.");
+    Assert(edited.Feats.Contains("Tough") && edited.Moves.Count == 2 && edited.Moves.Single(move => move.Name == "Tackle").CurrentPowerPoints == 20, "Advanced selections or move PP did not persist.");
+}
+
+static void ProfileAndManualTrainerControlsPersist()
+{
+    var service = CreateService(out _);
+    var first = service.CreateProfile("Old Name");
+    service.RenameProfile(first.Id, "New Name");
+    service.UpdateTrainer(new TrainerUpdate
+    {
+        ClassName = "Ace Trainer",
+        ManualModifiers = new ManualTrainerModifiers
+        {
+            Attack = 2, Damage = 3, Stab = 1, MoveSlots = 2, AbilityScoreIncreases = 4, MaximumActivePokemon = 8,
+            PokemonAttributes = new AbilityScores { Strength = 1, Dexterity = 2, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 },
+            TypeAttack = new Dictionary<string, int> { ["Fire"] = 2 },
+            AlwaysUseStabTypes = new HashSet<string> { "Fire" }
+        }
+    });
+    var rules = TrainerRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"));
+    var effects = service.GetTrainerEffects(rules);
+    Assert(service.GetActiveProfile()?.Name == "New Name" && effects.PokemonAttackBonus == 2 && effects.PokemonDamageBonus == 3 && effects.ExtraMoveSlots == 2, "Manual trainer modifiers or rename did not persist.");
+    Assert(service.GetTrainer().ManualModifiers.TypeAttack["Fire"] == 2 && service.GetTrainer().ManualModifiers.AlwaysUseStabTypes.Contains("Fire"), "Per-type trainer controls did not persist.");
+    var second = service.CreateProfile("Temporary");
+    service.DeleteProfile(second.Id);
+    Assert(service.GetActiveProfile()?.Id == first.Id, "Deleting the active profile did not select the remaining profile.");
+}
+
+static void BulkPokedexAndPokemonTransferPersist()
+{
+    var directory = Path.Combine(Path.GetTempPath(), "HebiKaio.Core.Tests", Guid.NewGuid().ToString("N"));
+    var repository = new JsonProfileRepository(Path.Combine(directory, "profiles.json"));
+    var service = new ProfileService(repository);
+    service.CreateProfile("Serena");
+    service.SetPokedexStates([1, 2, 3], PokedexEntryState.Seen);
+    Assert(service.GetPokedexStates().Count == 3 && service.GetPokedexStates().Values.All(state => state == PokedexEntryState.Seen), "Bulk Pokédex marking failed.");
+    var pokemon = service.CreatePokemon(Draft(25, "Pikachu", "Sparky", 5));
+    var transfer = new ProfileTransferService(repository);
+    var path = Path.Combine(directory, "sparky.hkpokemon");
+    transfer.ExportPokemon(pokemon.Id, path);
+    var imported = transfer.ImportPokemon(path);
+    Assert(imported.Id != pokemon.Id && service.GetOwnedPokemon().Count == 2 && imported.Nickname == "Sparky", "Individual Pokémon transfer did not create an independent stored Pokémon.");
 }
 
 static ProfileService CreateService(out string path)

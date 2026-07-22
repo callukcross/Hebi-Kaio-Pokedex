@@ -77,6 +77,12 @@ public sealed class JsonProfileRepository : IProfileRepository
             profile.Trainer.Abilities ??= new AbilityScores();
             profile.Trainer.Feats ??= [];
             profile.Trainer.Inventory ??= [];
+            profile.Trainer.ManualModifiers ??= new ManualTrainerModifiers();
+            profile.Trainer.ManualModifiers.PokemonAttributes ??= ZeroAbilities();
+            profile.Trainer.ManualModifiers.TypeAttack ??= new(StringComparer.OrdinalIgnoreCase);
+            profile.Trainer.ManualModifiers.TypeDamage ??= new(StringComparer.OrdinalIgnoreCase);
+            profile.Trainer.ManualModifiers.TypeStab ??= new(StringComparer.OrdinalIgnoreCase);
+            profile.Trainer.ManualModifiers.AlwaysUseStabTypes ??= new(StringComparer.OrdinalIgnoreCase);
             foreach (var pokemon in profile.Pokemon)
             {
                 pokemon.Nature = string.IsNullOrWhiteSpace(pokemon.Nature) ? "Hardy" : pokemon.Nature;

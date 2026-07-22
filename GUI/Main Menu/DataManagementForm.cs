@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Drawing;
 using System.Windows.Forms;
 using HebiKaio.Core.Content;
 using HebiKaio.Core.Profiles;
@@ -26,6 +27,8 @@ public sealed class DataManagementForm : Form
         var profileButtons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 50, Padding = new Padding(8) };
         profileButtons.Controls.Add(Button("Export Active Profile", ExportProfile));
         profileButtons.Controls.Add(Button("Import Profile", ImportProfile));
+        profileButtons.Controls.Add(Button("Export Pokémon", ExportPokemon));
+        profileButtons.Controls.Add(Button("Import Pokémon", ImportPokemon));
 
         var moduleButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 50, Padding = new Padding(8) };
         moduleButtons.Controls.Add(Button("Install Module", InstallModule));
@@ -77,6 +80,26 @@ public sealed class DataManagementForm : Form
         });
     }
 
+    private void ExportPokemon(object sender, EventArgs args)
+    {
+        var pokemon = _transfers.GetExportablePokemon();
+        if (pokemon.Count == 0) { MessageBox.Show(this, "The active profile has no Pokémon to export."); return; }
+        using var picker = new Form { Text = "Choose Pokémon", ClientSize = new Size(420, 150), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog };
+        var choice = new ComboBox { Left = 20, Top = 30, Width = 380, DropDownStyle = ComboBoxStyle.DropDownList };
+        foreach (var item in pokemon) choice.Items.Add(new PokemonItem(item)); choice.SelectedIndex = 0;
+        picker.Controls.AddRange([choice, new Button { Text = "Export", Left = 220, Top = 90, Width = 85, DialogResult = DialogResult.OK }, new Button { Text = "Cancel", Left = 315, Top = 90, Width = 85, DialogResult = DialogResult.Cancel }]);
+        if (picker.ShowDialog(this) != DialogResult.OK || choice.SelectedItem is not PokemonItem selected) return;
+        using var dialog = new SaveFileDialog { Filter = "HebiKaio Pokémon (*.hkpokemon)|*.hkpokemon", AddExtension = true, DefaultExt = "hkpokemon", FileName = selected.Pokemon.Nickname ?? selected.Pokemon.SpeciesName };
+        if (dialog.ShowDialog(this) == DialogResult.OK) Run(() => _transfers.ExportPokemon(selected.Pokemon.Id, dialog.FileName), "Pokémon exported successfully.");
+    }
+
+    private void ImportPokemon(object sender, EventArgs args)
+    {
+        using var dialog = new OpenFileDialog { Filter = "HebiKaio Pokémon (*.hkpokemon)|*.hkpokemon|JSON files (*.json)|*.json" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        Run(() => { var pokemon = _transfers.ImportPokemon(dialog.FileName); MessageBox.Show(this, $"Imported {pokemon.Nickname ?? pokemon.SpeciesName} into storage.", "Import complete"); });
+    }
+
     private void RemoveModule(object sender, EventArgs args)
     {
         if (_moduleList.SelectedItem is not ModuleListItem selected) return;
@@ -110,5 +133,10 @@ public sealed class DataManagementForm : Form
     private sealed record ModuleListItem(ContentModuleSummary Summary)
     {
         public override string ToString() => $"{Summary.Name} ({Summary.Id}) — {Summary.FeatCount} feats, {Summary.ItemCount} items";
+    }
+
+    private sealed record PokemonItem(OwnedPokemon Pokemon)
+    {
+        public override string ToString() => $"{Pokemon.Nickname ?? Pokemon.SpeciesName} — {Pokemon.SpeciesName} Lv. {Pokemon.Level}";
     }
 }

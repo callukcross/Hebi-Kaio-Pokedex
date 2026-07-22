@@ -13,4 +13,15 @@ public sealed class PokemonDraft
     public int Level { get; init; } = 1;
 
     public string? CustomImagePath { get; init; }
+
+    public PokemonGender? Gender { get; init; }
+    public bool? IsShiny { get; init; }
+    public string? Nature { get; init; }
+    public string? HeldItem { get; init; }
+    public AbilityScores? AttributeIncreases { get; init; }
+    public AbilityScores? CustomAttributes { get; init; }
+    public IReadOnlyCollection<string>? Abilities { get; init; }
+    public IReadOnlyCollection<string>? Feats { get; init; }
+    public IReadOnlyCollection<string>? Skills { get; init; }
+    public IReadOnlyCollection<string>? Moves { get; init; }
 }

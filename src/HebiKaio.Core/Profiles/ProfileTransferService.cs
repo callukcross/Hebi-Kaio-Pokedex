@@ -70,6 +70,43 @@ public sealed class ProfileTransferService
         return package.Profile;
     }
 
+    public void ExportPokemon(Guid pokemonId, string path)
+    {
+        var store = _repository.Load();
+        var profile = store.ActiveProfileId is { } profileId ? store.Profiles.SingleOrDefault(item => item.Id == profileId) : null;
+        var pokemon = profile?.Pokemon.SingleOrDefault(item => item.Id == pokemonId)
+            ?? throw new KeyNotFoundException("The requested Pokémon does not exist in the active profile.");
+        WriteAtomically(path, JsonSerializer.Serialize(new PokemonTransferPackage { Pokemon = pokemon }, Options));
+    }
+
+    public IReadOnlyList<OwnedPokemon> GetExportablePokemon()
+    {
+        var store = _repository.Load();
+        var profile = store.ActiveProfileId is { } id ? store.Profiles.SingleOrDefault(item => item.Id == id) : null;
+        return profile?.Pokemon.ToList() ?? [];
+    }
+
+    public OwnedPokemon ImportPokemon(string path)
+    {
+        PokemonTransferPackage package;
+        try { package = JsonSerializer.Deserialize<PokemonTransferPackage>(File.ReadAllText(path), Options) ?? throw new InvalidDataException("The Pokémon package is empty."); }
+        catch (JsonException exception) { throw new InvalidDataException("The Pokémon package is not valid JSON.", exception); }
+        if (package.FormatVersion != 1 || package.Pokemon is null || package.Pokemon.SpeciesNumber < 1 || string.IsNullOrWhiteSpace(package.Pokemon.SpeciesName) || package.Pokemon.Level is < 1 or > 20)
+            throw new InvalidDataException("This Pokémon package is invalid or unsupported.");
+        var store = _repository.Load();
+        var profile = (store.ActiveProfileId is { } id ? store.Profiles.SingleOrDefault(item => item.Id == id) : null)
+            ?? throw new InvalidOperationException("An active profile is required for Pokémon import.");
+        var pokemon = package.Pokemon;
+        pokemon.Id = Guid.NewGuid();
+        pokemon.Moves ??= []; pokemon.Abilities ??= []; pokemon.Feats ??= []; pokemon.Skills ??= []; pokemon.Statuses ??= [];
+        pokemon.AttributeIncreases ??= ZeroAbilities(); pokemon.CustomAttributes ??= ZeroAbilities();
+        profile.Pokemon.Add(pokemon);
+        profile.Pokedex[pokemon.SpeciesNumber] = PokedexEntryState.Caught;
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+        return pokemon;
+    }
+
     private static void NormalizeAndValidate(TrainerProfile profile)
     {
         profile.Name = profile.Name?.Trim() ?? string.Empty;
@@ -84,6 +121,7 @@ public sealed class ProfileTransferService
         profile.Trainer.Abilities ??= new AbilityScores();
         profile.Trainer.Feats ??= [];
         profile.Trainer.Inventory ??= [];
+        profile.Trainer.ManualModifiers ??= new ManualTrainerModifiers();
         foreach (var pokemon in profile.Pokemon)
         {
             pokemon.AttributeIncreases ??= ZeroAbilities();
@@ -131,4 +169,11 @@ public sealed class ProfileTransferPackage
     public int FormatVersion { get; init; } = 1;
     public DateTimeOffset ExportedAtUtc { get; init; } = DateTimeOffset.UtcNow;
     public TrainerProfile? Profile { get; init; }
+}
+
+public sealed class PokemonTransferPackage
+{
+    public int FormatVersion { get; init; } = 1;
+    public DateTimeOffset ExportedAtUtc { get; init; } = DateTimeOffset.UtcNow;
+    public OwnedPokemon? Pokemon { get; init; }
 }

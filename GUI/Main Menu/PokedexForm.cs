@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
+using HebiKaio.Core.Rules;
 
 namespace GUI
 {
@@ -24,11 +25,14 @@ namespace GUI
         private readonly Label _details = new Label();
         private readonly Label _resultCount = new Label();
         private PokemonSpecies _selected;
+        private readonly ReferenceRulesCatalog _referenceRules;
+        private IReadOnlyList<PokemonSpecies> _visibleSpecies = Array.Empty<PokemonSpecies>();
 
-        public PokedexForm(ProfileService profiles, IPokemonCatalog catalog)
+        public PokedexForm(ProfileService profiles, IPokemonCatalog catalog, ReferenceRulesCatalog referenceRules = null)
         {
             _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
             _allSpecies = catalog?.GetAll() ?? throw new ArgumentNullException(nameof(catalog));
+            _referenceRules = referenceRules;
             InitializeUi();
             PopulateFilters();
             ApplyFilters();
@@ -110,6 +114,9 @@ namespace GUI
             detail.Controls.Add(clear);
             detail.Controls.Add(seen);
             detail.Controls.Add(caught);
+            var markFiltered = new Button { Text = "Mark filtered...", Width = 235, Height = 34, Location = new Point(25, 487) };
+            markFiltered.Click += (sender, args) => MarkFiltered();
+            detail.Controls.Add(markFiltered);
         }
 
         private static void ConfigureFilter(ComboBox filter, int left, Control parent)
@@ -153,6 +160,7 @@ namespace GUI
                 EvolutionStage = _stage.SelectedIndex == 0 ? null : (EvolutionStage?)(_stage.SelectedIndex - 1)
             };
             var matches = filter.Apply(_allSpecies).ToList();
+            _visibleSpecies = matches;
             var states = _profiles.GetPokedexStates();
             _grid.Rows.Clear();
             foreach (var species in matches)
@@ -170,11 +178,25 @@ namespace GUI
                 _grid.Rows[index].Tag = species;
             }
 
-            _resultCount.Text = $"{matches.Count} of {_allSpecies.Count} species";
+            _resultCount.Text = $"{matches.Count} of {_allSpecies.Count} species • {states.Count(item => item.Value == PokedexEntryState.Seen)} seen • {states.Count(item => item.Value == PokedexEntryState.Caught)} caught";
             if (_grid.Rows.Count > 0)
                 _grid.Rows[0].Selected = true;
             else
                 ClearDetails();
+        }
+
+        private void MarkFiltered()
+        {
+            using var dialog = new Form { Text = "Mark filtered entries", ClientSize = new Size(360, 145), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog };
+            var choice = new ComboBox { Left = 20, Top = 45, Width = 320, DropDownStyle = ComboBoxStyle.DropDownList };
+            choice.Items.AddRange(new object[] { PokedexEntryState.Unknown, PokedexEntryState.Seen, PokedexEntryState.Caught });
+            choice.SelectedIndex = 1;
+            var okay = new Button { Text = "Apply", Left = 165, Top = 95, Width = 80, DialogResult = DialogResult.OK };
+            dialog.Controls.AddRange(new Control[] { new Label { Text = $"Set {_visibleSpecies.Count} filtered entries to:", Left = 20, Top = 15, Width = 320 }, choice, okay, new Button { Text = "Cancel", Left = 255, Top = 95, Width = 80, DialogResult = DialogResult.Cancel } });
+            if (dialog.ShowDialog(this) != DialogResult.OK || choice.SelectedItem is not PokedexEntryState state) return;
+            if (MessageBox.Show(this, $"Mark {_visibleSpecies.Count} entries as {state}?", "Confirm bulk change", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            _profiles.SetPokedexStates(_visibleSpecies.Select(item => item.Number), state);
+            ApplyFilters();
         }
 
         private void ShowSelectedSpecies()
@@ -185,7 +207,9 @@ namespace GUI
             _selected = species;
             _name.Text = $"#{species.Number:000} {species.Name}";
             var evolution = species.EvolvesInto.Count == 0 ? "—" : string.Join(", ", species.EvolvesInto);
-            _details.Text = $"Types: {string.Join(" / ", species.Types)}\nRegion: {species.Region}\nEvolution: {FormatStage(species.EvolutionStage)}\nSpecies rating: {species.SpeciesRating:0.###}\nMinimum wild level: {species.MinimumWildLevel}\nEvolves into: {evolution}\nStatus: {FormatState(_profiles.GetPokedexState(species.Number))}";
+            var extra = _referenceRules?.PokedexDetails.GetValueOrDefault(species.Number);
+            var rules = _referenceRules?.FindPokemon(species.Name);
+            _details.Text = $"{extra?.Genus}\n\nTypes: {string.Join(" / ", species.Types)}\nRegion: {species.Region}\nEvolution: {FormatStage(species.EvolutionStage)}\nSpecies rating: {species.SpeciesRating:0.###}\nMinimum wild level: {species.MinimumWildLevel}\nSize / AC / HP: {rules?.Size} / {rules?.ArmorClass} / {rules?.BaseHp}\nHeight / Weight: {extra?.Height:0.#} / {extra?.Weight:0.#}\nEvolves into: {evolution}\nStatus: {FormatState(_profiles.GetPokedexState(species.Number))}\n\n{extra?.FlavorText}";
 
             _image.Image?.Dispose();
             _image.Image = null;

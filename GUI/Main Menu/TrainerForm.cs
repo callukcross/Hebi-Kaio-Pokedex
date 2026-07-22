@@ -21,6 +21,9 @@ namespace GUI
         private readonly DataGridView _inventory = new DataGridView();
         private readonly ComboBox _catalogItem = new ComboBox();
         private readonly NumericUpDown _quantity = new NumericUpDown();
+        private readonly Dictionary<string, NumericUpDown> _manual = new Dictionary<string, NumericUpDown>();
+        private readonly Dictionary<string, CheckBox> _alwaysStab = new Dictionary<string, CheckBox>(StringComparer.OrdinalIgnoreCase);
+        private static readonly string[] PokemonTypes = { "Bug", "Dark", "Dragon", "Electric", "Fairy", "Fighting", "Fire", "Flying", "Ghost", "Grass", "Ground", "Ice", "Normal", "Poison", "Psychic", "Rock", "Steel", "Water" };
 
         public TrainerForm(ProfileService profiles, TrainerRulesCatalog rules)
         {
@@ -47,8 +50,31 @@ namespace GUI
             tabs.TabPages.Add(CreateCharacterTab());
             tabs.TabPages.Add(CreateFeatsTab());
             tabs.TabPages.Add(CreateInventoryTab());
+            tabs.TabPages.Add(CreateManualModifiersTab());
             Controls.Add(tabs);
             header.BringToFront();
+        }
+
+        private TabPage CreateManualModifiersTab()
+        {
+            var page = new TabPage("Manual Pokémon Modifiers") { AutoScroll = true };
+            var table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 5, Padding = new Padding(12) };
+            table.Controls.Add(new Label { Text = "Global modifier", AutoSize = true }); table.Controls.Add(new Label { Text = "Value", AutoSize = true }); table.SetColumnSpan(table.Controls[^1], 4);
+            foreach (var item in new[] { "Attack", "Damage", "STAB", "Move Slots", "ASI", "Evolution Level", "Maximum Active Pokémon", "Pokemon STR", "Pokemon DEX", "Pokemon CON", "Pokemon INT", "Pokemon WIS", "Pokemon CHA" })
+            {
+                var value = new NumericUpDown { Minimum = item == "Maximum Active Pokémon" ? 1 : -20, Maximum = item == "Maximum Active Pokémon" ? 12 : 20, Width = 70 };
+                _manual[item] = value; table.Controls.Add(new Label { Text = item, AutoSize = true }); table.Controls.Add(value); table.SetColumnSpan(value, 4);
+            }
+            table.Controls.Add(new Label { Text = "Type", AutoSize = true, Font = new Font(Font, FontStyle.Bold) });
+            table.Controls.Add(new Label { Text = "Attack", AutoSize = true }); table.Controls.Add(new Label { Text = "Damage", AutoSize = true }); table.Controls.Add(new Label { Text = "STAB", AutoSize = true }); table.Controls.Add(new Label { Text = "Always STAB", AutoSize = true });
+            foreach (var type in PokemonTypes)
+            {
+                table.Controls.Add(new Label { Text = type, AutoSize = true });
+                foreach (var kind in new[] { "TypeAttack", "TypeDamage", "TypeStab" }) { var value = new NumericUpDown { Minimum = -20, Maximum = 20, Width = 60 }; _manual[kind + ":" + type] = value; table.Controls.Add(value); }
+                var always = new CheckBox { Text = "Use", AutoSize = true, Tag = type }; table.Controls.Add(always); _alwaysStab[type] = always;
+            }
+            var save = new Button { Text = "Save Manual Modifiers", Dock = DockStyle.Bottom, Height = 40 }; save.Click += (_, _) => SaveTrainer();
+            page.Controls.Add(table); page.Controls.Add(save); save.BringToFront(); return page;
         }
 
         private TabPage CreateCharacterTab()
@@ -166,6 +192,7 @@ namespace GUI
             for (var index = 0; index < _feats.Items.Count; index++)
                 _feats.SetItemChecked(index, trainer.Feats.Contains(_feats.Items[index].ToString(), StringComparer.OrdinalIgnoreCase));
             RefreshInventory(trainer);
+            LoadManualModifiers(trainer.ManualModifiers);
             RefreshEffects();
         }
 
@@ -184,10 +211,32 @@ namespace GUI
                     Wisdom = (int)_abilities["Wisdom"].Value,
                     Charisma = (int)_abilities["Charisma"].Value
                 },
-                Feats = selectedFeats
+                Feats = selectedFeats,
+                ManualModifiers = ReadManualModifiers()
             });
             RefreshEffects();
         }
+
+        private void LoadManualModifiers(ManualTrainerModifiers modifiers)
+        {
+            _manual["Attack"].Value = modifiers.Attack; _manual["Damage"].Value = modifiers.Damage; _manual["STAB"].Value = modifiers.Stab;
+            _manual["Move Slots"].Value = modifiers.MoveSlots; _manual["ASI"].Value = modifiers.AbilityScoreIncreases; _manual["Evolution Level"].Value = modifiers.EvolutionLevel; _manual["Maximum Active Pokémon"].Value = Math.Clamp(modifiers.MaximumActivePokemon, 1, 12);
+            _manual["Pokemon STR"].Value = modifiers.PokemonAttributes.Strength; _manual["Pokemon DEX"].Value = modifiers.PokemonAttributes.Dexterity; _manual["Pokemon CON"].Value = modifiers.PokemonAttributes.Constitution; _manual["Pokemon INT"].Value = modifiers.PokemonAttributes.Intelligence; _manual["Pokemon WIS"].Value = modifiers.PokemonAttributes.Wisdom; _manual["Pokemon CHA"].Value = modifiers.PokemonAttributes.Charisma;
+            foreach (var type in PokemonTypes) { _manual["TypeAttack:" + type].Value = modifiers.TypeAttack.GetValueOrDefault(type); _manual["TypeDamage:" + type].Value = modifiers.TypeDamage.GetValueOrDefault(type); _manual["TypeStab:" + type].Value = modifiers.TypeStab.GetValueOrDefault(type); }
+            foreach (var type in PokemonTypes) _alwaysStab[type].Checked = modifiers.AlwaysUseStabTypes.Contains(type);
+        }
+
+        private ManualTrainerModifiers ReadManualModifiers() => new()
+        {
+            Attack = (int)_manual["Attack"].Value, Damage = (int)_manual["Damage"].Value, Stab = (int)_manual["STAB"].Value,
+            MoveSlots = (int)_manual["Move Slots"].Value, AbilityScoreIncreases = (int)_manual["ASI"].Value, EvolutionLevel = (int)_manual["Evolution Level"].Value,
+            MaximumActivePokemon = (int)_manual["Maximum Active Pokémon"].Value,
+            PokemonAttributes = new AbilityScores { Strength = (int)_manual["Pokemon STR"].Value, Dexterity = (int)_manual["Pokemon DEX"].Value, Constitution = (int)_manual["Pokemon CON"].Value, Intelligence = (int)_manual["Pokemon INT"].Value, Wisdom = (int)_manual["Pokemon WIS"].Value, Charisma = (int)_manual["Pokemon CHA"].Value },
+            TypeAttack = PokemonTypes.ToDictionary(type => type, type => (int)_manual["TypeAttack:" + type].Value),
+            TypeDamage = PokemonTypes.ToDictionary(type => type, type => (int)_manual["TypeDamage:" + type].Value),
+            TypeStab = PokemonTypes.ToDictionary(type => type, type => (int)_manual["TypeStab:" + type].Value),
+            AlwaysUseStabTypes = _alwaysStab.Where(item => item.Value.Checked).Select(item => item.Key).ToHashSet(StringComparer.OrdinalIgnoreCase)
+        };
 
         private void RefreshEffects()
         {

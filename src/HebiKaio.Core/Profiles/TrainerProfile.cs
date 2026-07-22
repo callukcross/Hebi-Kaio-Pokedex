@@ -95,6 +95,24 @@ public sealed class TrainerCharacter
     public List<string> Feats { get; set; } = [];
 
     public List<InventoryEntry> Inventory { get; set; } = [];
+
+    public ManualTrainerModifiers ManualModifiers { get; set; } = new();
+}
+
+public sealed class ManualTrainerModifiers
+{
+    public int Attack { get; set; }
+    public int Damage { get; set; }
+    public int Stab { get; set; }
+    public int MoveSlots { get; set; }
+    public int AbilityScoreIncreases { get; set; }
+    public int EvolutionLevel { get; set; }
+    public int MaximumActivePokemon { get; set; } = 6;
+    public AbilityScores PokemonAttributes { get; set; } = new() { Strength = 0, Dexterity = 0, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 };
+    public Dictionary<string, int> TypeAttack { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, int> TypeDamage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, int> TypeStab { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> AlwaysUseStabTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed class AbilityScores

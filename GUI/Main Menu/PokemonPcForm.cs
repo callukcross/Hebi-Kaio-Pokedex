@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
 using HebiKaio.Core.Trainer;
+using HebiKaio.Core.Rules;
 
 namespace GUI
 {
@@ -14,17 +15,19 @@ namespace GUI
         private readonly ProfileService _profiles;
         private readonly IPokemonCatalog _catalog;
         private readonly TrainerRulesCatalog _trainerRules;
+        private readonly ReferenceRulesCatalog _referenceRules;
         private readonly DataGridView _party = CreateGrid();
         private readonly DataGridView _storage = CreateGrid();
         private readonly Label _summary = new Label();
         private readonly PictureBox _preview = new PictureBox();
         private readonly Label _previewName = new Label();
 
-        public PokemonPcForm(ProfileService profiles, IPokemonCatalog catalog, TrainerRulesCatalog trainerRules)
+        public PokemonPcForm(ProfileService profiles, IPokemonCatalog catalog, TrainerRulesCatalog trainerRules, ReferenceRulesCatalog referenceRules = null)
         {
             _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _trainerRules = trainerRules ?? throw new ArgumentNullException(nameof(trainerRules));
+            _referenceRules = referenceRules;
             InitializeUi();
             RefreshPokemon();
         }
@@ -164,10 +167,11 @@ namespace GUI
 
         private void CreatePokemon()
         {
-            using var dialog = new PokemonEditorDialog(_catalog);
+            using Form dialog = _referenceRules is null ? (Form)new PokemonEditorDialog(_catalog) : new AdvancedPokemonEditorDialog(_catalog, _referenceRules, _trainerRules);
             if (dialog.ShowDialog(this) != DialogResult.OK)
                 return;
-            var created = _profiles.CreatePokemon(dialog.Result);
+            var draft = dialog is AdvancedPokemonEditorDialog advanced ? advanced.Result : ((PokemonEditorDialog)dialog).Result;
+            var created = _referenceRules is null ? _profiles.CreatePokemon(draft) : _profiles.CreatePokemon(draft, _referenceRules);
             RefreshPokemon(created.Id);
         }
 
@@ -177,10 +181,11 @@ namespace GUI
             if (selected == null)
                 return;
 
-            using var dialog = new PokemonEditorDialog(_catalog, selected);
+            using Form dialog = _referenceRules is null ? (Form)new PokemonEditorDialog(_catalog, selected) : new AdvancedPokemonEditorDialog(_catalog, _referenceRules, _trainerRules, selected);
             if (dialog.ShowDialog(this) != DialogResult.OK)
                 return;
-            _profiles.UpdatePokemon(selected.Id, dialog.Result);
+            var draft = dialog is AdvancedPokemonEditorDialog advanced ? advanced.Result : ((PokemonEditorDialog)dialog).Result;
+            if (_referenceRules is null) _profiles.UpdatePokemon(selected.Id, draft); else _profiles.UpdatePokemon(selected.Id, draft, _referenceRules);
             RefreshPokemon(selected.Id);
         }
 

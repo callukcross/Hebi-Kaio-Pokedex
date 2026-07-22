@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using HebiKaio.Core.Profiles;
 using HebiKaio.Core.Pokedex;
+using HebiKaio.Core.Trainer;
 
 namespace GUI
 {
@@ -57,7 +58,7 @@ namespace GUI
             try
             {
                 var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
-                ShowEmbeddedForm(new PokemonPcForm(_profileService, JsonPokemonCatalog.Load(dataPath)));
+                ShowEmbeddedForm(new PokemonPcForm(_profileService, JsonPokemonCatalog.Load(dataPath), TrainerRulesCatalog.Load(dataPath)));
             }
             catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
             {
@@ -81,6 +82,25 @@ namespace GUI
             catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
             {
                 MessageBox.Show(this, exception.Message, "Unable to load Pokédex", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void trainerButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_profileService.GetActiveProfile() == null)
+                {
+                    MessageBox.Show(this, "Create a trainer profile before opening the character sheet.", "Profile required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
+                ShowEmbeddedForm(new TrainerForm(_profileService, TrainerRulesCatalog.Load(dataPath)));
+            }
+            catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
+            {
+                MessageBox.Show(this, exception.Message, "Unable to load trainer rules", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Forms;
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
+using HebiKaio.Core.Trainer;
 
 namespace GUI
 {
@@ -12,16 +13,18 @@ namespace GUI
         private const string PokemonDragFormat = "HebiKaio.OwnedPokemonId";
         private readonly ProfileService _profiles;
         private readonly IPokemonCatalog _catalog;
+        private readonly TrainerRulesCatalog _trainerRules;
         private readonly DataGridView _party = CreateGrid();
         private readonly DataGridView _storage = CreateGrid();
         private readonly Label _summary = new Label();
         private readonly PictureBox _preview = new PictureBox();
         private readonly Label _previewName = new Label();
 
-        public PokemonPcForm(ProfileService profiles, IPokemonCatalog catalog)
+        public PokemonPcForm(ProfileService profiles, IPokemonCatalog catalog, TrainerRulesCatalog trainerRules)
         {
             _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+            _trainerRules = trainerRules ?? throw new ArgumentNullException(nameof(trainerRules));
             InitializeUi();
             RefreshPokemon();
         }
@@ -65,6 +68,18 @@ namespace GUI
             _previewName.Font = new Font(Font.FontFamily, 11, FontStyle.Bold);
             previewPanel.Controls.Add(_previewName);
             _preview.BringToFront();
+            var trainerEffects = new Label { Dock = DockStyle.Bottom, Height = 160, Font = new Font(FontFamily.GenericMonospace, 8.5f) };
+            var effects = _profiles.GetTrainerEffects(_trainerRules);
+            trainerEffects.Text =
+                $"TRAINER EFFECTS\n" +
+                $"Attack   +{effects.PokemonAttackBonus}\n" +
+                $"Damage   +{effects.PokemonDamageBonus}\n" +
+                $"AC       +{effects.PokemonArmorClassBonus}\n" +
+                $"Init.    +{effects.PokemonInitiativeBonus}\n" +
+                $"HP/lvl   +{effects.PokemonHitPointsPerLevel}\n" +
+                $"STAB     +{effects.StabBonus}\n" +
+                $"Moves    +{effects.ExtraMoveSlots}";
+            previewPanel.Controls.Add(trainerEffects);
 
             var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 230 };
             content.Controls.Add(split);

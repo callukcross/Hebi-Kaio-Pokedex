@@ -1,5 +1,7 @@
 namespace HebiKaio.Core.Profiles;
 
+using HebiKaio.Core.Trainer;
+
 public sealed class ProfileService
 {
     public const int MaximumPartySize = 6;
@@ -86,6 +88,7 @@ public sealed class ProfileService
             profile.Pokedex[speciesNumber] = state;
 
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        RefreshTrainerLevel(profile);
         _repository.Save(store);
     }
 
@@ -122,6 +125,7 @@ public sealed class ProfileService
 
         profile.Pokemon.Add(pokemon);
         profile.Pokedex[pokemon.SpeciesNumber] = PokedexEntryState.Caught;
+        RefreshTrainerLevel(profile);
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
         _repository.Save(store);
         return ClonePokemon(pokemon);
@@ -207,6 +211,88 @@ public sealed class ProfileService
         _repository.Save(store);
     }
 
+    public TrainerCharacter GetTrainer()
+    {
+        var profile = GetRequiredActiveProfile(_repository.Load());
+        return CloneTrainer(profile.Trainer);
+    }
+
+    public void UpdateTrainer(TrainerUpdate update)
+    {
+        ArgumentNullException.ThrowIfNull(update);
+        if (string.IsNullOrWhiteSpace(update.ClassName))
+            throw new ArgumentException("A trainer class is required.", nameof(update.ClassName));
+        ValidateAbilities(update.Abilities);
+
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        profile.Trainer.ClassName = update.ClassName.Trim();
+        profile.Trainer.Abilities = CloneAbilities(update.Abilities);
+        profile.Trainer.Feats = update.Feats
+            .Where(feat => !string.IsNullOrWhiteSpace(feat))
+            .Select(feat => feat.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(feat => feat)
+            .ToList();
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+    }
+
+    public InventoryEntry AddInventoryItem(string name, string description, int quantity = 1, bool isCustom = false)
+    {
+        var normalizedName = name?.Trim() ?? string.Empty;
+        if (normalizedName.Length is < 1 or > 80)
+            throw new ArgumentException("Item names must contain between 1 and 80 characters.", nameof(name));
+        if (quantity is < 1 or > 999)
+            throw new ArgumentOutOfRangeException(nameof(quantity));
+
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        var existing = profile.Trainer.Inventory.FirstOrDefault(item =>
+            string.Equals(item.Name, normalizedName, StringComparison.OrdinalIgnoreCase) && item.IsCustom == isCustom);
+        if (existing != null)
+        {
+            existing.Quantity = Math.Min(999, existing.Quantity + quantity);
+            profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            _repository.Save(store);
+            return CloneInventoryEntry(existing);
+        }
+
+        var item = new InventoryEntry
+        {
+            Name = normalizedName,
+            Description = description?.Trim() ?? string.Empty,
+            Quantity = quantity,
+            IsCustom = isCustom
+        };
+        profile.Trainer.Inventory.Add(item);
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+        return CloneInventoryEntry(item);
+    }
+
+    public void SetInventoryQuantity(Guid itemId, int quantity)
+    {
+        if (quantity is < 0 or > 999)
+            throw new ArgumentOutOfRangeException(nameof(quantity));
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        var item = profile.Trainer.Inventory.SingleOrDefault(entry => entry.Id == itemId)
+            ?? throw new KeyNotFoundException("The requested inventory item does not exist.");
+        if (quantity == 0)
+            profile.Trainer.Inventory.Remove(item);
+        else
+            item.Quantity = quantity;
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+    }
+
+    public TrainerEffects GetTrainerEffects(TrainerRulesCatalog catalog)
+    {
+        var profile = GetRequiredActiveProfile(_repository.Load());
+        return TrainerRulesService.Calculate(profile, catalog);
+    }
+
     private static TrainerProfile GetRequiredActiveProfile(ProfileStore store)
     {
         if (store.ActiveProfileId is not { } activeId)
@@ -225,6 +311,20 @@ public sealed class ProfileService
             throw new ArgumentException("A species is required.", nameof(draft.SpeciesName));
         if (draft.Level is < 1 or > 20)
             throw new ArgumentOutOfRangeException(nameof(draft.Level), "Pokémon levels must be between 1 and 20.");
+    }
+
+    private static void ValidateAbilities(AbilityScores abilities)
+    {
+        ArgumentNullException.ThrowIfNull(abilities);
+        var scores = new[] { abilities.Strength, abilities.Dexterity, abilities.Constitution, abilities.Intelligence, abilities.Wisdom, abilities.Charisma };
+        if (scores.Any(score => score is < 1 or > 20))
+            throw new ArgumentOutOfRangeException(nameof(abilities), "Ability scores must be between 1 and 20.");
+    }
+
+    private static void RefreshTrainerLevel(TrainerProfile profile)
+    {
+        var caught = profile.Pokedex.Values.Count(state => state == PokedexEntryState.Caught);
+        profile.TrainerLevel = Math.Max(profile.TrainerLevel, TrainerRulesService.CalculateMilestoneLevel(caught));
     }
 
     private static string? NormalizeOptional(string? value, int maximumLength, string parameterName)
@@ -258,6 +358,33 @@ public sealed class ProfileService
         Form = pokemon.Form,
         Level = pokemon.Level,
         CustomImagePath = pokemon.CustomImagePath
+    };
+
+    private static TrainerCharacter CloneTrainer(TrainerCharacter trainer) => new()
+    {
+        ClassName = trainer.ClassName,
+        Abilities = CloneAbilities(trainer.Abilities),
+        Feats = trainer.Feats.ToList(),
+        Inventory = trainer.Inventory.Select(CloneInventoryEntry).ToList()
+    };
+
+    private static AbilityScores CloneAbilities(AbilityScores abilities) => new()
+    {
+        Strength = abilities.Strength,
+        Dexterity = abilities.Dexterity,
+        Constitution = abilities.Constitution,
+        Intelligence = abilities.Intelligence,
+        Wisdom = abilities.Wisdom,
+        Charisma = abilities.Charisma
+    };
+
+    private static InventoryEntry CloneInventoryEntry(InventoryEntry item) => new()
+    {
+        Id = item.Id,
+        Name = item.Name,
+        Description = item.Description,
+        Quantity = item.Quantity,
+        IsCustom = item.IsCustom
     };
 
     private static string NormalizeName(string name)

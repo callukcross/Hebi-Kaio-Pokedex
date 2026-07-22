@@ -17,7 +17,7 @@ Save data uses versioned JSON and an adjacent backup file. Custom modules should
 1. Foundation: persistent profiles, versioned saves/backups, domain models, filtering, and repeatable checks.
 2. Pokédex: canonical species dataset, searchable/filterable list, detail view, and seen/caught state. **Implemented for the 810-entry Pokémon 5e reference index.**
 3. Pokémon management: creation/editing, storage, party limits, drag-and-drop ordering, and custom images. **Implemented in the desktop prototype.**
-4. Trainer rules: classes, feats, items, inventory, derived modifiers, and milestone leveling.
+4. Trainer rules: classes, feats, items, inventory, derived modifiers, and milestone leveling. **Implemented in the desktop prototype.**
 5. Extensibility: import/export and validated custom content modules.
 6. Distribution: responsive cross-platform UI, migration from the Windows prototype, and PC/mobile packaging.
 

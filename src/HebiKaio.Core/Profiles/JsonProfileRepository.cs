@@ -68,6 +68,16 @@ public sealed class JsonProfileRepository : IProfileRepository
             throw new InvalidDataException($"Save schema {store.SchemaVersion} is newer than this app supports.");
 
         store.Profiles ??= [];
+        foreach (var profile in store.Profiles)
+        {
+            profile.Pokedex ??= [];
+            profile.Pokemon ??= [];
+            profile.PartyPokemonIds ??= [];
+            profile.Trainer ??= new TrainerCharacter();
+            profile.Trainer.Abilities ??= new AbilityScores();
+            profile.Trainer.Feats ??= [];
+            profile.Trainer.Inventory ??= [];
+        }
         return store;
     }
 

@@ -2,7 +2,7 @@ namespace HebiKaio.Core.Profiles;
 
 public sealed class ProfileStore
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 

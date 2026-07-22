@@ -1,5 +1,6 @@
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
+using HebiKaio.Core.Trainer;
 
 var failures = new List<string>();
 Run("profiles persist and become active", ProfilesPersist, failures);
@@ -11,6 +12,9 @@ Run("pokedex filters compose", FiltersCompose, failures);
 Run("pokemon creation and editing persist", PokemonLifecyclePersists, failures);
 Run("party membership and ordering persist", PartyManagementPersists, failures);
 Run("party size is limited to six", PartySizeIsLimited, failures);
+Run("trainer levels from caught-entry milestones", TrainerMilestonesLevelUp, failures);
+Run("trainer feats and classes derive pokemon effects", TrainerEffectsAreDerived, failures);
+Run("catalog and custom inventory items persist", InventoryPersists, failures);
 
 if (failures.Count > 0)
 {
@@ -156,6 +160,51 @@ static PokemonDraft Draft(int number, string species, string? nickname, int leve
     Nickname = nickname,
     Level = level
 };
+
+static void TrainerMilestonesLevelUp()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Nemona");
+    for (var number = 1; number <= 10; number++)
+        service.SetPokedexState(number, PokedexEntryState.Caught);
+
+    Assert(service.GetActiveProfile()?.TrainerLevel == 2, "Ten caught entries did not advance the trainer to level two.");
+    service.SetPokedexState(10, PokedexEntryState.Unknown);
+    Assert(service.GetActiveProfile()?.TrainerLevel == 2, "Losing a caught mark incorrectly reduced an earned trainer level.");
+}
+
+static void TrainerEffectsAreDerived()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Cynthia");
+    for (var number = 1; number <= 60; number++)
+        service.SetPokedexState(number, PokedexEntryState.Caught);
+    service.UpdateTrainer(new TrainerUpdate
+    {
+        ClassName = "Ace Trainer",
+        Feats = ["AC Up", "Extra Move", "Alert"]
+    });
+
+    var rules = TrainerRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"));
+    var effects = service.GetTrainerEffects(rules);
+    Assert(effects.TrainerLevel == 7 && effects.PokemonAttackBonus == 1 && effects.PokemonDamageBonus == 1, "Ace Trainer progression bonuses were incorrect.");
+    Assert(effects.PokemonArmorClassBonus == 1 && effects.ExtraMoveSlots == 1 && effects.PokemonInitiativeBonus == 5, "Feat-derived effects were incorrect.");
+}
+
+static void InventoryPersists()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Juliana");
+    var potion = service.AddInventoryItem("Potion", "Restore HP", 2);
+    service.AddInventoryItem("Potion", "Restore HP", 3);
+    var custom = service.AddInventoryItem("Camp Kit", "A custom travel kit", 1, isCustom: true);
+
+    var inventory = service.GetTrainer().Inventory;
+    Assert(inventory.Single(item => item.Id == potion.Id).Quantity == 5, "Catalog item quantities did not stack.");
+    Assert(inventory.Single(item => item.Id == custom.Id).IsCustom, "The custom item flag did not persist.");
+    service.SetInventoryQuantity(custom.Id, 0);
+    Assert(service.GetTrainer().Inventory.All(item => item.Id != custom.Id), "Removing an inventory item failed.");
+}
 
 static ProfileService CreateService(out string path)
 {

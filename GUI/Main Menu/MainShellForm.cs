@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -27,6 +28,11 @@ public sealed class MainShellForm : Form
     private Form _currentPage;
 
     public MainShellForm()
+        : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HebiKaioPokedex"))
+    {
+    }
+
+    internal MainShellForm(string appDirectory)
     {
         Text = "HebiKaio Pokédex 5E";
         MinimumSize = new Size(1000, 720);
@@ -35,7 +41,6 @@ public sealed class MainShellForm : Form
         BackColor = AppTheme.Background;
         ForeColor = AppTheme.Text;
 
-        var appDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HebiKaioPokedex");
         _moduleDirectory = Path.Combine(appDirectory, "modules");
         _repository = new JsonProfileRepository(Path.Combine(appDirectory, "profiles.json"));
         _profiles = new ProfileService(_repository);
@@ -49,6 +54,24 @@ public sealed class MainShellForm : Form
         Controls.Add(_navigation);
         ShowDashboard();
     }
+
+    internal string RunNavigationSelfTest()
+    {
+        var expected = new Dictionary<string, Type>
+        {
+            ["Party"] = typeof(PartyBattleForm), ["Pokémon Storage"] = typeof(PokemonPcForm), ["Generate Encounter"] = typeof(EncounterGeneratorForm),
+            ["Pokédex"] = typeof(PokedexForm), ["Trainer"] = typeof(TrainerForm), ["Profiles"] = typeof(ProfilesForm),
+            ["Receive / Import"] = typeof(DataManagementForm), ["Connect"] = typeof(NetworkForm), ["Settings"] = typeof(SettingsForm), ["About"] = typeof(AboutForm)
+        };
+        foreach (var item in expected)
+        {
+            var button = FindControls<Button>(this).Single(control => control.Text == item.Key); button.PerformClick(); Application.DoEvents();
+            if (_currentPage?.GetType() != item.Value) throw new InvalidOperationException($"Navigation '{item.Key}' opened '{_currentPage?.GetType().Name ?? "nothing"}' instead of '{item.Value.Name}'.");
+        }
+        return $"PASS: {expected.Count} navigation pages opened successfully.";
+    }
+
+    private static IEnumerable<T> FindControls<T>(Control root) where T : Control => root.Controls.Cast<Control>().SelectMany(control => FindControls<T>(control)).Concat(root.Controls.OfType<T>());
 
     private void BuildNavigation()
     {
@@ -120,12 +143,13 @@ public sealed class MainShellForm : Form
 
     private void ShowPage(Form page)
     {
-        if (_currentPage is not null) { _content.Controls.Remove(_currentPage); _currentPage.Dispose(); }
+        var previous = _currentPage; _currentPage = null;
+        _content.Controls.Clear(); previous?.Dispose();
         _currentPage = page;
         page.TopLevel = false;
         page.FormBorderStyle = FormBorderStyle.None;
         page.Dock = DockStyle.Fill;
-        page.FormClosed += (_, _) => { _currentPage = null; RefreshProfile(); ShowDashboard(); };
+        page.FormClosed += (_, _) => { if (!ReferenceEquals(_currentPage, page)) return; _currentPage = null; RefreshProfile(); ShowDashboard(); };
         _content.Controls.Add(page);
         page.Show();
     }

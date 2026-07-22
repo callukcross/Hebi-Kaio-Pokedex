@@ -7,9 +7,13 @@ namespace HebiKaio.Installer;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        if (args.Length == 2 && args[0] == "--install-test")
+        {
+            InstallerForm.Install(Path.GetFullPath(args[1]), false, false, new Progress<(int Percent, string Status)>(), registerWithWindows: false); return;
+        }
         Application.Run(new InstallerForm());
     }
 }
@@ -168,7 +172,7 @@ internal sealed class InstallerForm : Form
         ShowPage();
     }
 
-    private static void Install(string destination, bool desktopShortcut, bool startMenuShortcut, IProgress<(int Percent, string Status)> progress)
+    internal static void Install(string destination, bool desktopShortcut, bool startMenuShortcut, IProgress<(int Percent, string Status)> progress, bool registerWithWindows = true)
     {
         Directory.CreateDirectory(destination);
         using var payload = typeof(Program).Assembly.GetManifestResourceStream("HebiKaio.Payload.zip")
@@ -189,7 +193,7 @@ internal sealed class InstallerForm : Form
         progress.Report((90, "Creating shortcuts..."));
         if (startMenuShortcut) CreateShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), AppName + ".lnk"), destination);
         if (desktopShortcut) CreateShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), AppName + ".lnk"), destination);
-        RegisterUninstaller(destination);
+        if (registerWithWindows) RegisterUninstaller(destination);
         progress.Report((100, "Installation complete."));
     }
 

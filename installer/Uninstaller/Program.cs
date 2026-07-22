@@ -1,32 +1,55 @@
 using System.Diagnostics;
 using Microsoft.Win32;
 
-const string productName = "HebiKaio Pokedex";
-var currentDirectory = Path.GetFullPath(AppContext.BaseDirectory);
-
-try
+internal static class Program
 {
-    if (!File.Exists(Path.Combine(currentDirectory, ".hebikaio-install")) || !File.Exists(Path.Combine(currentDirectory, "HebiKaioPokedex.exe")) || string.Equals(currentDirectory.TrimEnd('\\'), Path.GetPathRoot(currentDirectory)?.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
-        throw new InvalidOperationException("The uninstaller is not running from a valid HebiKaio Pokedex installation directory.");
-    if (MessageBox.Show($"Remove {productName}?\n\nSaved profiles and custom modules will be kept.", "Uninstall " + productName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
-        return;
+    private const string ProductName = "HebiKaio Pokedex";
+    private const string RegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\HebiKaioPokedex";
 
-    DeleteShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), productName + ".lnk"));
-    DeleteShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), productName + ".lnk"));
-    Registry.CurrentUser.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\HebiKaioPokedex", throwOnMissingSubKey: false);
+    [STAThread]
+    private static void Main(string[] args)
+    {
+        ApplicationConfiguration.Initialize();
+        try
+        {
+            var installationDirectory = FindInstallationDirectory();
+            if (args.Contains("--validate", StringComparer.OrdinalIgnoreCase)) { Environment.ExitCode = installationDirectory is null ? 1 : 0; return; }
+            if (installationDirectory is null) throw new InvalidOperationException("HebiKaio Pokedex is not currently installed for this Windows account.");
+            if (MessageBox.Show($"Remove {ProductName}?\n\nSaved profiles and custom modules will be kept.", "Uninstall " + ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
 
-    var script = Path.Combine(Path.GetTempPath(), "HebiKaio-uninstall-" + Guid.NewGuid().ToString("N") + ".cmd");
-    File.WriteAllText(script, $"@echo off\r\ntimeout /t 2 /nobreak >nul\r\nrmdir /s /q \"{currentDirectory}\"\r\ndel /q \"%~f0\"\r\n");
-    Process.Start(new ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { CreateNoWindow = true, UseShellExecute = false });
-    MessageBox.Show(productName + " was removed. Your saved profiles were kept.", "Uninstall complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-}
-catch (Exception exception)
-{
-    MessageBox.Show(exception.Message, "Uninstall failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-    Environment.ExitCode = 1;
-}
+            DeleteShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), ProductName + ".lnk"));
+            DeleteShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), ProductName + ".lnk"));
+            Registry.CurrentUser.DeleteSubKeyTree(RegistryPath, throwOnMissingSubKey: false);
+            ScheduleRemoval(installationDirectory);
+            MessageBox.Show(ProductName + " will finish removing itself in the background. Your saved profiles were kept.", "Uninstall complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(exception.Message, "Uninstall failed", MessageBoxButtons.OK, MessageBoxIcon.Error); Environment.ExitCode = 1;
+        }
+    }
 
-static void DeleteShortcut(string path)
-{
-    if (File.Exists(path)) File.Delete(path);
+    private static string? FindInstallationDirectory()
+    {
+        var executableDirectory = Path.GetFullPath(AppContext.BaseDirectory);
+        if (IsInstallationDirectory(executableDirectory)) return executableDirectory;
+        using var key = Registry.CurrentUser.OpenSubKey(RegistryPath);
+        var registered = key?.GetValue("InstallLocation") as string;
+        return !string.IsNullOrWhiteSpace(registered) && IsInstallationDirectory(registered) ? Path.GetFullPath(registered) : null;
+    }
+
+    private static bool IsInstallationDirectory(string directory)
+    {
+        var full = Path.GetFullPath(directory); var root = Path.GetPathRoot(full);
+        return !string.Equals(full.TrimEnd('\\'), root?.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) && File.Exists(Path.Combine(full, ".hebikaio-install")) && File.Exists(Path.Combine(full, "HebiKaioPokedex.exe"));
+    }
+
+    private static void ScheduleRemoval(string directory)
+    {
+        var script = Path.Combine(Path.GetTempPath(), "HebiKaio-uninstall-" + Guid.NewGuid().ToString("N") + ".cmd");
+        File.WriteAllText(script, $"@echo off\r\ncd /d \"%TEMP%\"\r\nfor /L %%i in (1,1,10) do (\r\n  rmdir /s /q \"{directory.TrimEnd('\\')}\" 2>nul\r\n  if not exist \"{directory.TrimEnd('\\')}\" goto done\r\n  timeout /t 1 /nobreak >nul\r\n)\r\n:done\r\ndel /q \"%~f0\"\r\n");
+        Process.Start(new ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { CreateNoWindow = true, UseShellExecute = false, WorkingDirectory = Path.GetTempPath() });
+    }
+
+    private static void DeleteShortcut(string path) { if (File.Exists(path)) File.Delete(path); }
 }

@@ -448,6 +448,7 @@ public sealed class ProfileService
         if (draft.IsShiny is { } shiny) pokemon.IsShiny = shiny;
         if (!string.IsNullOrWhiteSpace(draft.Nature)) pokemon.Nature = draft.Nature.Trim();
         if (draft.HeldItem is not null) pokemon.HeldItem = NormalizeOptional(draft.HeldItem, 80, nameof(draft.HeldItem));
+        if (draft.MaximumHpOverride is { } maximumHp) pokemon.MaximumHpOverride = maximumHp <= 0 ? null : Math.Clamp(maximumHp, 1, 9999);
         if (draft.AttributeIncreases is not null) pokemon.AttributeIncreases = CloneAbilities(draft.AttributeIncreases);
         if (draft.CustomAttributes is not null) pokemon.CustomAttributes = CloneAbilities(draft.CustomAttributes);
         if (draft.Abilities is not null) pokemon.Abilities = NormalizeList(draft.Abilities, 80);

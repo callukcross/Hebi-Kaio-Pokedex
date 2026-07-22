@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -16,18 +17,22 @@ namespace GUI
         private readonly IPokemonCatalog _catalog;
         private readonly TrainerRulesCatalog _trainerRules;
         private readonly ReferenceRulesCatalog _referenceRules;
+        private readonly ProfileTransferService _transfers;
         private readonly DataGridView _party = CreateGrid();
         private readonly DataGridView _storage = CreateGrid();
         private readonly Label _summary = new Label();
         private readonly PictureBox _preview = new PictureBox();
         private readonly Label _previewName = new Label();
+        private readonly TextBox _search = new() { Width = 190, PlaceholderText = "Search storage..." };
+        private readonly ComboBox _sort = new() { Width = 140, DropDownStyle = ComboBoxStyle.DropDownList };
 
-        public PokemonPcForm(ProfileService profiles, IPokemonCatalog catalog, TrainerRulesCatalog trainerRules, ReferenceRulesCatalog referenceRules = null)
+        public PokemonPcForm(ProfileService profiles, IPokemonCatalog catalog, TrainerRulesCatalog trainerRules, ReferenceRulesCatalog referenceRules = null, ProfileTransferService transfers = null)
         {
             _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
             _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             _trainerRules = trainerRules ?? throw new ArgumentNullException(nameof(trainerRules));
             _referenceRules = referenceRules;
+            _transfers = transfers;
             InitializeUi();
             RefreshPokemon();
         }
@@ -52,9 +57,14 @@ namespace GUI
             var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 54, Padding = new Padding(10), FlowDirection = FlowDirection.LeftToRight };
             actions.Controls.Add(CreateButton("Create Pokémon", (sender, args) => CreatePokemon()));
             actions.Controls.Add(CreateButton("Edit Selected", (sender, args) => EditSelected()));
+            actions.Controls.Add(CreateButton("Evolve Selected", (sender, args) => EvolveSelected()));
             actions.Controls.Add(CreateButton("Add to Party", (sender, args) => AddSelectedToParty()));
             actions.Controls.Add(CreateButton("Remove from Party", (sender, args) => RemoveSelectedFromParty()));
             actions.Controls.Add(CreateButton("Delete Selected", (sender, args) => DeleteSelected()));
+            if (_transfers is not null) { actions.Controls.Add(CreateButton("Export Selected", (_, _) => ExportSelected())); actions.Controls.Add(CreateButton("Show QR", (_, _) => ShowQr())); }
+            _sort.Items.AddRange(["Pokédex number", "Name", "Level"]); _sort.SelectedIndex = 0;
+            actions.Controls.Add(_search); actions.Controls.Add(_sort);
+            _search.TextChanged += (_, _) => RefreshPokemon(); _sort.SelectedIndexChanged += (_, _) => RefreshPokemon();
             Controls.Add(actions);
 
             var content = new Panel { Dock = DockStyle.Fill };
@@ -127,6 +137,7 @@ namespace GUI
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Name", Width = 180 });
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Species", HeaderText = "Species", Width = 180 });
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Level", HeaderText = "Level", Width = 70 });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Party", HeaderText = "Party", Width = 65 });
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Form", HeaderText = "Form", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
             return grid;
         }
@@ -141,15 +152,19 @@ namespace GUI
         private void RefreshPokemon(Guid? selectId = null)
         {
             var party = _profiles.GetPartyPokemon();
-            var storage = _profiles.GetOwnedPokemon();
-            FillGrid(_party, party.ToArray(), includeSlots: true);
-            FillGrid(_storage, storage.ToArray(), includeSlots: false);
+            IEnumerable<OwnedPokemon> storageQuery = _profiles.GetOwnedPokemon();
+            if (!string.IsNullOrWhiteSpace(_search.Text)) storageQuery = storageQuery.Where(item => item.SpeciesName.Contains(_search.Text, StringComparison.OrdinalIgnoreCase) || (item.Nickname?.Contains(_search.Text, StringComparison.OrdinalIgnoreCase) ?? false));
+            storageQuery = _sort.SelectedIndex switch { 1 => storageQuery.OrderBy(item => item.Nickname ?? item.SpeciesName), 2 => storageQuery.OrderByDescending(item => item.Level).ThenBy(item => item.SpeciesName), _ => storageQuery.OrderBy(item => item.SpeciesNumber) };
+            var storage = storageQuery.ToList();
+            var partyIds = party.Select(item => item.Id).ToHashSet();
+            FillGrid(_party, party.ToArray(), includeSlots: true, partyIds);
+            FillGrid(_storage, storage.ToArray(), includeSlots: false, partyIds);
             _summary.Text = $"Party {party.Count}/{ProfileService.MaximumPartySize}     Storage {storage.Count}";
             if (selectId is { } id)
                 SelectPokemon(_storage, id);
         }
 
-        private static void FillGrid(DataGridView grid, OwnedPokemon[] pokemon, bool includeSlots)
+        private static void FillGrid(DataGridView grid, OwnedPokemon[] pokemon, bool includeSlots, IReadOnlySet<Guid> partyIds)
         {
             grid.Rows.Clear();
             for (var index = 0; index < pokemon.Length; index++)
@@ -160,6 +175,7 @@ namespace GUI
                     string.IsNullOrWhiteSpace(item.Nickname) ? item.SpeciesName : item.Nickname,
                     $"#{item.SpeciesNumber:000} {item.SpeciesName}",
                     item.Level,
+                    partyIds.Contains(item.Id) ? "Yes" : "",
                     item.Form ?? "—");
                 grid.Rows[row].Tag = item;
             }
@@ -216,6 +232,32 @@ namespace GUI
                 return;
             _profiles.DeletePokemon(selected.Id);
             RefreshPokemon();
+        }
+
+        private void EvolveSelected()
+        {
+            var selected = GetSelectedPokemon(_storage) ?? GetSelectedPokemon(_party);
+            if (selected is null || _referenceRules is null) return;
+            var current = _referenceRules.FindPokemon(selected.SpeciesName);
+            if (string.IsNullOrWhiteSpace(current?.EvolvesInto)) { MessageBox.Show(this, $"{selected.SpeciesName} has no recorded evolution.", "Evolution"); return; }
+            var target = _catalog.GetAll().FirstOrDefault(item => string.Equals(item.Name, current.EvolvesInto, StringComparison.OrdinalIgnoreCase));
+            if (target is null) { MessageBox.Show(this, $"Evolution data points to '{current.EvolvesInto}', which is not available in this catalog.", "Evolution"); return; }
+            if (MessageBox.Show(this, $"Evolve {selected.Nickname ?? selected.SpeciesName} into {target.Name}?", "Confirm evolution", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            var draft = new PokemonDraft { SpeciesNumber = target.Number, SpeciesName = target.Name, Nickname = selected.Nickname, Level = selected.Level, Gender = selected.Gender, IsShiny = selected.IsShiny, Nature = selected.Nature, HeldItem = selected.HeldItem, Form = selected.Form, MaximumHpOverride = selected.MaximumHpOverride ?? 0, CustomImagePath = selected.CustomImagePath, AttributeIncreases = selected.AttributeIncreases, CustomAttributes = selected.CustomAttributes, Abilities = selected.Abilities, Moves = selected.Moves.Select(item => item.Name).ToList(), Feats = selected.Feats, Skills = selected.Skills };
+            _profiles.UpdatePokemon(selected.Id, draft, _referenceRules); RefreshPokemon(selected.Id);
+        }
+
+        private void ExportSelected()
+        {
+            var selected = GetSelectedPokemon(_storage) ?? GetSelectedPokemon(_party); if (selected is null) return;
+            using var dialog = new SaveFileDialog { Filter = "HebiKaio Pokémon (*.hkpokemon)|*.hkpokemon", DefaultExt = "hkpokemon", AddExtension = true, FileName = selected.Nickname ?? selected.SpeciesName };
+            if (dialog.ShowDialog(this) == DialogResult.OK) _transfers.ExportPokemon(selected.Id, dialog.FileName);
+        }
+
+        private void ShowQr()
+        {
+            var selected = GetSelectedPokemon(_storage) ?? GetSelectedPokemon(_party); if (selected is null) return;
+            using var dialog = new PokemonQrForm(_transfers, selected); dialog.ShowDialog(this);
         }
 
         private static OwnedPokemon GetSelectedPokemon(DataGridView grid) => grid.CurrentRow?.Tag as OwnedPokemon;

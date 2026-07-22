@@ -24,9 +24,11 @@ public sealed class AdvancedPokemonEditorDialog : Form
     private readonly ComboBox _nature = new() { DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly ComboBox _item = new() { DropDownStyle = ComboBoxStyle.DropDown };
     private readonly TextBox _form = new();
+    private readonly NumericUpDown _maximumHp = new() { Minimum = 0, Maximum = 9999, Width = 120 };
     private readonly TextBox _image = new() { ReadOnly = true };
     private readonly CheckedListBox _abilities = new() { Dock = DockStyle.Fill, CheckOnClick = true };
     private readonly CheckedListBox _moves = new() { Dock = DockStyle.Fill, CheckOnClick = true };
+    private readonly ComboBox _moveFilter = new() { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly CheckedListBox _feats = new() { Dock = DockStyle.Fill, CheckOnClick = true };
     private readonly CheckedListBox _skills = new() { Dock = DockStyle.Fill, CheckOnClick = true };
     private readonly Dictionary<string, NumericUpDown> _attributes = new(StringComparer.OrdinalIgnoreCase);
@@ -40,7 +42,7 @@ public sealed class AdvancedPokemonEditorDialog : Form
         ClientSize = new Size(860, 720); MinimumSize = new Size(760, 620); StartPosition = FormStartPosition.CenterParent;
         var tabs = new TabControl { Dock = DockStyle.Fill };
         tabs.TabPages.Add(BuildGeneral()); tabs.TabPages.Add(BuildAttributes());
-        tabs.TabPages.Add(BuildSelection("Moves", _moves)); tabs.TabPages.Add(BuildSelection("Abilities", _abilities));
+        tabs.TabPages.Add(BuildMoveSelection()); tabs.TabPages.Add(BuildSelection("Abilities", _abilities));
         tabs.TabPages.Add(BuildSelection("Feats", _feats)); tabs.TabPages.Add(BuildSelection("Skills", _skills));
         var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 55, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
         var cancel = AppTheme.Button("Cancel", (_, _) => { DialogResult = DialogResult.Cancel; Close(); });
@@ -52,6 +54,8 @@ public sealed class AdvancedPokemonEditorDialog : Form
         foreach (var value in _trainerRules.Feats.Keys.OrderBy(value => value)) _feats.Items.Add(value);
         var allSkills = _rules.Pokemon.SelectMany(value => value.Skills).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value => value); foreach (var value in allSkills) _skills.Items.Add(value);
         foreach (var value in _speciesData) _species.Items.Add(new SpeciesOption(value));
+        _moveFilter.Items.AddRange(["Available at current level", "Maximum-level moves", "TM/HM moves", "Egg moves", "All moves"]); _moveFilter.SelectedIndex = 0;
+        _moveFilter.SelectedIndexChanged += (_, _) => RefreshSpeciesChoices();
         _species.SelectedIndexChanged += (_, _) => RefreshSpeciesChoices(); _level.ValueChanged += (_, _) => RefreshSpeciesChoices();
         PopulateExisting();
     }
@@ -61,7 +65,7 @@ public sealed class AdvancedPokemonEditorDialog : Form
         var page = new TabPage("Identity");
         var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(20), AutoScroll = true };
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150)); table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddField(table, "Species", _species); AddField(table, "Nickname", _nickname); AddField(table, "Level", _level); AddField(table, "Gender", _gender); AddField(table, "Nature", _nature); AddField(table, "Held item", _item); AddField(table, "Variant / form", _form); AddField(table, "", _shiny);
+        AddField(table, "Species", _species); AddField(table, "Nickname", _nickname); AddField(table, "Level", _level); AddField(table, "Gender", _gender); AddField(table, "Nature", _nature); AddField(table, "Held item", _item); AddField(table, "Variant / form", _form); AddField(table, "Maximum HP (0 = automatic)", _maximumHp); AddField(table, "", _shiny);
         var imageRow = new FlowLayoutPanel { Dock = DockStyle.Fill }; _image.Width = 450; imageRow.Controls.Add(_image); imageRow.Controls.Add(AppTheme.Button("Browse...", (_, _) => BrowseImage())); AddField(table, "Custom artwork", imageRow);
         page.Controls.Add(table); return page;
     }
@@ -82,14 +86,21 @@ public sealed class AdvancedPokemonEditorDialog : Form
 
     private static TabPage BuildSelection(string title, CheckedListBox list)
     {
-        var page = new TabPage(title); page.Controls.Add(list); page.Controls.Add(new Label { Dock = DockStyle.Top, Height = 36, Padding = new Padding(8), Text = $"Search and selection parity: choose {title.ToLowerInvariant()} by checking entries. Move choices update with species and level." }); return page;
+        var page = new TabPage(title); var search = new TextBox { Dock = DockStyle.Top, PlaceholderText = $"Search {title.ToLowerInvariant()}..." };
+        search.TextChanged += (_, _) => SelectMatch(list, search.Text);
+        page.Controls.Add(list); page.Controls.Add(search); return page;
+    }
+
+    private TabPage BuildMoveSelection()
+    {
+        var page = BuildSelection("Moves", _moves); page.Controls.Add(_moveFilter); _moveFilter.BringToFront(); return page;
     }
 
     private void PopulateExisting()
     {
         _species.SelectedItem = _species.Items.Cast<SpeciesOption>().FirstOrDefault(item => item.Species.Number == _existing?.SpeciesNumber) ?? _species.Items.Cast<SpeciesOption>().First();
         if (_existing is null) { _gender.SelectedItem = PokemonGender.Unspecified; _nature.SelectedItem = "Hardy"; _item.SelectedIndex = 0; return; }
-        _nickname.Text = _existing.Nickname ?? ""; _level.Value = _existing.Level; _gender.SelectedItem = _existing.Gender; _shiny.Checked = _existing.IsShiny; _nature.SelectedItem = _existing.Nature; _item.Text = _existing.HeldItem ?? "None"; _form.Text = _existing.Form ?? ""; _image.Text = _existing.CustomImagePath ?? "";
+        _nickname.Text = _existing.Nickname ?? ""; _level.Value = _existing.Level; _gender.SelectedItem = _existing.Gender; _shiny.Checked = _existing.IsShiny; _nature.SelectedItem = _existing.Nature; _item.Text = _existing.HeldItem ?? "None"; _form.Text = _existing.Form ?? ""; _maximumHp.Value = _existing.MaximumHpOverride ?? 0; _image.Text = _existing.CustomImagePath ?? "";
         SetScores(_existing.AttributeIncreases, "increase"); SetScores(_existing.CustomAttributes, "custom");
         CheckValues(_feats, _existing.Feats); CheckValues(_skills, _existing.Skills); RefreshSpeciesChoices(); CheckValues(_abilities, _existing.Abilities); CheckValues(_moves, _existing.Moves.Select(move => move.Name));
     }
@@ -98,16 +109,27 @@ public sealed class AdvancedPokemonEditorDialog : Form
     {
         if (_species.SelectedItem is not SpeciesOption option) return;
         var pokemon = _rules.FindPokemon(option.Species.Name); if (pokemon is null) return;
+        if (DesktopSettingsService.Load().StrictGender && _rules.GenderRules.TryGetValue(pokemon.Name, out var requiredGender))
+        {
+            _gender.Items.Clear(); _gender.Items.Add(requiredGender); _gender.SelectedItem = requiredGender; _gender.Enabled = false;
+        }
+        else if (_gender.Items.Count != Enum.GetValues<PokemonGender>().Length)
+        {
+            var selectedGender = _existing?.Gender ?? PokemonGender.Unspecified;
+            _gender.Items.Clear(); foreach (var value in Enum.GetValues<PokemonGender>()) _gender.Items.Add(value);
+            _gender.SelectedItem = selectedGender; _gender.Enabled = true;
+        }
         var selectedAbilities = _abilities.CheckedItems.Cast<string>().Concat(_existing?.Abilities ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var selectedMoves = _moves.CheckedItems.Cast<string>().Concat(_existing?.Moves.Select(move => move.Name) ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
         _abilities.Items.Clear(); foreach (var value in pokemon.Abilities.Concat(pokemon.HiddenAbility is null ? [] : [pokemon.HiddenAbility]).Distinct()) _abilities.Items.Add(value, selectedAbilities.Contains(value));
-        _moves.Items.Clear(); foreach (var value in PokemonRulesService.AvailableMoves(pokemon, (int)_level.Value).Concat(pokemon.EggMoves).Distinct().OrderBy(value => value)) _moves.Items.Add(value, selectedMoves.Contains(value));
+        IEnumerable<string> moveChoices = _moveFilter.SelectedIndex switch { 1 => PokemonRulesService.AvailableMoves(pokemon, 20), 2 => _rules.GetMachineMoves(pokemon), 3 => pokemon.EggMoves, 4 => _rules.Moves.Select(move => move.Name), _ => PokemonRulesService.AvailableMoves(pokemon, (int)_level.Value) };
+        _moves.Items.Clear(); foreach (var value in moveChoices.Concat(selectedMoves).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value => value)) _moves.Items.Add(value, selectedMoves.Contains(value));
     }
 
     private void Save()
     {
         if (_species.SelectedItem is not SpeciesOption option) { MessageBox.Show(this, "Choose a species."); return; }
-        Result = new PokemonDraft { SpeciesNumber = option.Species.Number, SpeciesName = option.Species.Name, Nickname = _nickname.Text, Level = (int)_level.Value, Gender = (PokemonGender)_gender.SelectedItem, IsShiny = _shiny.Checked, Nature = _nature.Text, HeldItem = _item.Text == "None" ? "" : _item.Text, Form = _form.Text, CustomImagePath = _image.Text, AttributeIncreases = Scores("increase"), CustomAttributes = Scores("custom"), Abilities = _abilities.CheckedItems.Cast<string>().ToList(), Moves = _moves.CheckedItems.Cast<string>().ToList(), Feats = _feats.CheckedItems.Cast<string>().ToList(), Skills = _skills.CheckedItems.Cast<string>().ToList() };
+        Result = new PokemonDraft { SpeciesNumber = option.Species.Number, SpeciesName = option.Species.Name, Nickname = _nickname.Text, Level = (int)_level.Value, Gender = (PokemonGender)_gender.SelectedItem, IsShiny = _shiny.Checked, Nature = _nature.Text, HeldItem = _item.Text == "None" ? "" : _item.Text, Form = _form.Text, MaximumHpOverride = (int)_maximumHp.Value, CustomImagePath = _image.Text, AttributeIncreases = Scores("increase"), CustomAttributes = Scores("custom"), Abilities = _abilities.CheckedItems.Cast<string>().ToList(), Moves = _moves.CheckedItems.Cast<string>().ToList(), Feats = _feats.CheckedItems.Cast<string>().ToList(), Skills = _skills.CheckedItems.Cast<string>().ToList() };
         DialogResult = DialogResult.OK; Close();
     }
 
@@ -115,6 +137,7 @@ public sealed class AdvancedPokemonEditorDialog : Form
     private int Value(string name, string suffix) => (int)_attributes[name + ":" + suffix].Value;
     private void SetScores(AbilityScores scores, string suffix) { _attributes["STR:" + suffix].Value = scores.Strength; _attributes["DEX:" + suffix].Value = scores.Dexterity; _attributes["CON:" + suffix].Value = scores.Constitution; _attributes["INT:" + suffix].Value = scores.Intelligence; _attributes["WIS:" + suffix].Value = scores.Wisdom; _attributes["CHA:" + suffix].Value = scores.Charisma; }
     private static void CheckValues(CheckedListBox list, IEnumerable<string> values) { var set = values.ToHashSet(StringComparer.OrdinalIgnoreCase); for (var i = 0; i < list.Items.Count; i++) list.SetItemChecked(i, set.Contains(list.Items[i].ToString())); }
+    private static void SelectMatch(ListBox list, string query) { if (string.IsNullOrWhiteSpace(query)) return; var index = list.FindString(query); if (index >= 0) list.SelectedIndex = index; }
     private void BrowseImage() { using var dialog = new OpenFileDialog { Filter = "Images|*.png;*.jpg;*.jpeg;*.webp;*.bmp" }; if (dialog.ShowDialog(this) == DialogResult.OK) _image.Text = dialog.FileName; }
     private static void AddField(TableLayoutPanel table, string label, Control control) { table.RowCount++; table.Controls.Add(new Label { Text = label, AutoSize = true, Margin = new Padding(3, 8, 3, 8) }); control.Dock = DockStyle.Top; table.Controls.Add(control); }
     private sealed record SpeciesOption(PokemonSpecies Species) { public override string ToString() => $"#{Species.Number:000} {Species.Name}"; }

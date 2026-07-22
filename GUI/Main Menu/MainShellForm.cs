@@ -22,6 +22,8 @@ public sealed class MainShellForm : Form
     private readonly Panel _navigation = new() { Dock = DockStyle.Left, Width = 210, AutoScroll = true };
     private readonly Panel _content = new() { Dock = DockStyle.Fill };
     private readonly Label _activeProfile = new() { Dock = DockStyle.Bottom, Height = 54, Padding = new Padding(12), TextAlign = ContentAlignment.MiddleLeft };
+    private readonly Label _connection = new() { Dock = DockStyle.Bottom, Height = 28, Padding = new Padding(12, 4, 0, 0), Text = "● Local transfer ready", ForeColor = Color.DarkSeaGreen };
+    private Button _activeNavigation;
     private Form _currentPage;
 
     public MainShellForm()
@@ -54,19 +56,21 @@ public sealed class MainShellForm : Form
         var title = new Label { Text = "HEBIKAIO\nPOKÉDEX 5E", Dock = DockStyle.Top, Height = 82, Font = new Font(Font.FontFamily, 15, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.White };
         var links = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(10), BackColor = _navigation.BackColor };
         AddLink(links, "Party", () => RequireProfile(() => new PartyBattleForm(_profiles, _catalog, _referenceRules, _trainerRules)));
-        AddLink(links, "Pokémon Storage", () => RequireProfile(() => new PokemonPcForm(_profiles, _catalog, _trainerRules, _referenceRules)));
+        AddLink(links, "Pokémon Storage", () => RequireProfile(() => new PokemonPcForm(_profiles, _catalog, _trainerRules, _referenceRules, new ProfileTransferService(_repository))));
         AddActionLink(links, "Add Pokémon", AddPokemon);
         AddLink(links, "Generate Encounter", () => RequireProfile(() => new EncounterGeneratorForm(_profiles, _catalog, _referenceRules)));
         AddLink(links, "Pokédex", () => RequireProfile(() => new PokedexForm(_profiles, _catalog, _referenceRules)));
         AddLink(links, "Trainer", () => RequireProfile(() => new TrainerForm(_profiles, _trainerRules)));
         AddLink(links, "Profiles", () => new ProfilesForm(_profiles, RefreshProfile));
         AddLink(links, "Receive / Import", () => new DataManagementForm(new ProfileTransferService(_repository), new CustomContentService(_moduleDirectory), RefreshProfile));
-        AddLink(links, "Connect", () => new NetworkForm());
+        AddLink(links, "Connect", () => RequireProfile(() => new NetworkForm(new ProfileTransferService(_repository))));
         AddLink(links, "Settings", () => new SettingsForm(_moduleDirectory));
         AddLink(links, "About", () => new AboutForm());
         _navigation.Controls.Add(links);
+        _navigation.Controls.Add(_connection);
         _navigation.Controls.Add(_activeProfile);
         _navigation.Controls.Add(title);
+        title.Cursor = Cursors.Hand; title.Click += (_, _) => ToggleNavigation(title, links);
         RefreshProfile();
     }
 
@@ -74,7 +78,7 @@ public sealed class MainShellForm : Form
     {
         var button = new Button { Text = text, Width = 170, Height = 40, Margin = new Padding(0, 0, 0, 7), FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), BackColor = AppTheme.Surface, ForeColor = AppTheme.Text };
         button.FlatAppearance.BorderSize = 0;
-        button.Click += (_, _) => ((MainShellForm)button.FindForm()).ShowPage(page());
+        button.Click += (_, _) => { var shell = (MainShellForm)button.FindForm(); shell.SelectNavigation(button); shell.ShowPage(page()); };
         parent.Controls.Add(button);
     }
 
@@ -82,7 +86,7 @@ public sealed class MainShellForm : Form
     {
         var button = new Button { Text = text, Width = 170, Height = 40, Margin = new Padding(0, 0, 0, 7), FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0), BackColor = AppTheme.Surface, ForeColor = AppTheme.Text };
         button.FlatAppearance.BorderSize = 0;
-        button.Click += (_, _) => action();
+        button.Click += (_, _) => { var shell = (MainShellForm)button.FindForm(); shell.SelectNavigation(button); action(); };
         parent.Controls.Add(button);
     }
 
@@ -110,7 +114,7 @@ public sealed class MainShellForm : Form
         if (dialog.ShowDialog(this) == DialogResult.OK)
         {
             _profiles.CreatePokemon(dialog.Result, _referenceRules);
-            ShowPage(new PokemonPcForm(_profiles, _catalog, _trainerRules, _referenceRules));
+            ShowPage(new PokemonPcForm(_profiles, _catalog, _trainerRules, _referenceRules, new ProfileTransferService(_repository)));
         }
     }
 
@@ -130,5 +134,17 @@ public sealed class MainShellForm : Form
     {
         var active = _profiles.GetActiveProfile();
         _activeProfile.Text = active is null ? "No active profile" : $"{active.Name}\nTrainer Lv. {active.TrainerLevel}";
+    }
+
+    private void SelectNavigation(Button selected)
+    {
+        if (_activeNavigation is not null) _activeNavigation.BackColor = AppTheme.Surface;
+        _activeNavigation = selected; _activeNavigation.BackColor = Color.FromArgb(59, 104, 145);
+    }
+
+    private void ToggleNavigation(Label title, Control links)
+    {
+        var expanded = _navigation.Width > 60; _navigation.Width = expanded ? 58 : 210; links.Visible = !expanded; _activeProfile.Visible = !expanded; _connection.Visible = !expanded;
+        title.Text = expanded ? "☰" : "HEBIKAIO\nPOKÉDEX 5E";
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HebiKaio.Core.Profiles;
 
 namespace HebiKaio.Core.Rules;
 
@@ -12,23 +13,35 @@ public sealed class ReferenceRulesCatalog
         IReadOnlyDictionary<string, MoveRule> moves,
         IReadOnlyDictionary<string, string> abilities,
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>> natures,
-        IReadOnlyDictionary<int, PokedexExtra> pokedexDetails)
+        IReadOnlyDictionary<int, PokedexExtra> pokedexDetails,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> habitats,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> trainerClasses,
+        IReadOnlyDictionary<string, PokemonGender> genderRules)
     {
         _pokemon = pokemon;
         _moves = moves;
         Abilities = abilities;
         Natures = natures;
         PokedexDetails = pokedexDetails;
+        Habitats = habitats;
+        TrainerClasses = trainerClasses;
+        GenderRules = genderRules;
     }
 
     public IReadOnlyDictionary<string, string> Abilities { get; }
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>> Natures { get; }
     public IReadOnlyDictionary<int, PokedexExtra> PokedexDetails { get; }
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Habitats { get; }
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> TrainerClasses { get; }
+    public IReadOnlyDictionary<string, PokemonGender> GenderRules { get; }
     public IReadOnlyCollection<PokemonRule> Pokemon => _pokemon.Values.ToList();
     public IReadOnlyCollection<MoveRule> Moves => _moves.Values.ToList();
 
     public PokemonRule? FindPokemon(string name) => _pokemon.GetValueOrDefault(name);
     public MoveRule? FindMove(string name) => _moves.GetValueOrDefault(name);
+    public IReadOnlyList<string> GetMachineMoves(PokemonRule pokemon) => pokemon.TechnicalMachines.Where(number => number > 0 && number < MachineMoves.Length).Select(number => MachineMoves[number]).Where(name => name is not null).Cast<string>().ToList();
+
+    private static readonly string?[] MachineMoves = [null, "Work Up", "Dragon Claw", "Psyshock", "Calm Mind", "Roar", "Toxic", "Hail", "Bulk Up", "Venoshock", "Hidden Power", "Sunny Day", "Taunt", "Ice Beam", "Blizzard", "Hyper Beam", "Light Screen", "Protect", "Rain Dance", "Roost", "Safeguard", "Frustration", "Solar Beam", "Smack Down", "Thunderbolt", "Thunder", "Earthquake", "Return", "Leech Life", "Psychic", "Shadow Ball", "Brick Break", "Double Team", "Reflect", "Sludge Wave", "Flamethrower", "Sludge Bomb", "Sandstorm", "Fire Blast", "Rock Tomb", "Aerial Ace", "Torment", "Facade", "Flame Charge", "Rest", "Attract", "Thief", "Low Sweep", "Round", "Echoed Voice", "Overheat", "Steel Wing", "Focus Blast", "Energy Ball", "False Swipe", "Scald", "Fling", "Charge Beam", "Sky Drop", "Brutal Swing", "Quash", "Will-O-Wisp", "Acrobatics", "Embargo", "Explosion", "Shadow Claw", "Payback", "Smart Strike", "Giga Impact", "Rock Polish", "Aurora Veil", "Stone Edge", "Volt Switch", "Thunder Wave", "Gyro Ball", "Swords Dance", "Fly", "Psych Up", "Bulldoze", "Frost Breath", "Rock Slide", "X-Scissor", "Dragon Tail", "Infestation", "Poison Jab", "Dream Eater", "Grass Knot", "Swagger", "Sleep Talk", "U-Turn", "Substitute", "Flash Cannon", "Trick Room", "Wild Charge", "Surf", "Snarl", "Nature Power", "Dark Pulse", "Waterfall", "Dazzling Gleam", "Confide"];
 
     public static ReferenceRulesCatalog Load(string dataDirectory)
     {
@@ -41,7 +54,10 @@ public sealed class ReferenceRulesCatalog
         var abilities = LoadDescriptions(Path.Combine(dataDirectory, "abilities.json"), "Description");
         var natures = LoadNatures(Path.Combine(dataDirectory, "natures.json"));
         var details = LoadPokedexDetails(Path.Combine(dataDirectory, "pokedex_extra.json"));
-        return new ReferenceRulesCatalog(pokemon, moves, abilities, natures, details);
+        var habitats = LoadNamedLists(Path.Combine(dataDirectory, "habitat.json"));
+        var trainerClasses = LoadNamedLists(Path.Combine(dataDirectory, "trainer_classes.json"));
+        var genders = LoadGenderRules(Path.Combine(dataDirectory, "gender.json"));
+        return new ReferenceRulesCatalog(pokemon, moves, abilities, natures, details, habitats, trainerClasses, genders);
     }
 
     private static PokemonRule LoadPokemon(string path)
@@ -67,11 +83,12 @@ public sealed class ReferenceRulesCatalog
             HiddenAbility = Text(root, "Hidden Ability"),
             Skills = Strings(root, "Skill"),
             SavingThrows = Strings(root, "saving_throws"),
+            Senses = Strings(root, "Senses"),
             Size = Text(root, "size") ?? string.Empty,
             WalkingSpeed = Integer(root, "WSp"),
             FlyingSpeed = Integer(root, "Fsp"),
             SwimmingSpeed = Integer(root, "Ssp"),
-            BurrowingSpeed = Integer(root, "Bsp"),
+            BurrowingSpeed = Math.Max(Integer(root, "Bsp"), Integer(root, "Burrowing Speed")),
             ClimbingSpeed = Integer(root, "Csp"),
             EvolvesInto = Text(root, "Evolve"),
             Attributes = root.TryGetProperty("attributes", out var attributes)
@@ -129,6 +146,21 @@ public sealed class ReferenceRulesCatalog
             item => new PokedexExtra(Text(item.Value, "genus") ?? string.Empty, Text(item.Value, "flavor") ?? string.Empty, Number(item.Value, "height"), Number(item.Value, "weight")));
     }
 
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> LoadNamedLists(string path)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        return document.RootElement.EnumerateObject().ToDictionary(item => item.Name, item => (IReadOnlyList<string>)Strings(item.Value), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyDictionary<string, PokemonGender> LoadGenderRules(string path)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var result = new Dictionary<string, PokemonGender>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in document.RootElement.EnumerateObject())
+            result[item.Name] = item.Value.GetInt32() switch { 1 => PokemonGender.Male, 2 => PokemonGender.Female, _ => PokemonGender.Genderless };
+        return result;
+    }
+
     private static int Integer(JsonElement root, string name)
     {
         if (!root.TryGetProperty(name, out var value)) return 0;
@@ -161,6 +193,7 @@ public sealed class PokemonRule
     public string? HiddenAbility { get; init; }
     public IReadOnlyList<string> Skills { get; init; } = [];
     public IReadOnlyList<string> SavingThrows { get; init; } = [];
+    public IReadOnlyList<string> Senses { get; init; } = [];
     public string Size { get; init; } = string.Empty;
     public int WalkingSpeed { get; init; }
     public int FlyingSpeed { get; init; }

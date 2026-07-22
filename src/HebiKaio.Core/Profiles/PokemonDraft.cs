@@ -18,6 +18,7 @@ public sealed class PokemonDraft
     public bool? IsShiny { get; init; }
     public string? Nature { get; init; }
     public string? HeldItem { get; init; }
+    public int? MaximumHpOverride { get; init; }
     public AbilityScores? AttributeIncreases { get; init; }
     public AbilityScores? CustomAttributes { get; init; }
     public IReadOnlyCollection<string>? Abilities { get; init; }

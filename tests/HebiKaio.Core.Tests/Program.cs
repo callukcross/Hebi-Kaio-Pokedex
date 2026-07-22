@@ -24,6 +24,8 @@ Run("complete reference rules catalog loads", CompleteReferenceRulesLoad, failur
 Run("reference pokemon initialize and battle state persists", ReferencePokemonBattleStatePersists, failures);
 Run("profile management and manual trainer modifiers persist", ProfileAndManualTrainerControlsPersist, failures);
 Run("bulk pokedex marking and pokemon transfer persist", BulkPokedexAndPokemonTransferPersist, failures);
+Run("type defenses and encounter metadata load", TypeDefensesAndEncounterMetadataLoad, failures);
+Run("pokemon clipboard transfer round trips", PokemonClipboardTransferRoundTrips, failures);
 
 if (failures.Count > 0)
 {
@@ -349,6 +351,25 @@ static void BulkPokedexAndPokemonTransferPersist()
     transfer.ExportPokemon(pokemon.Id, path);
     var imported = transfer.ImportPokemon(path);
     Assert(imported.Id != pokemon.Id && service.GetOwnedPokemon().Count == 2 && imported.Nickname == "Sparky", "Individual Pokémon transfer did not create an independent stored Pokémon.");
+}
+
+static void TypeDefensesAndEncounterMetadataLoad()
+{
+    var rules = ReferenceRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"));
+    var defenses = PokemonTypeService.Calculate(["Fire", "Flying"]);
+    Assert(defenses.Vulnerabilities.Contains("Rock x4") && defenses.Immunities.Contains("Ground"), "Dual-type defenses were calculated incorrectly.");
+    Assert(rules.Habitats.Count > 0 && rules.TrainerClasses.Count > 0 && rules.GenderRules.ContainsKey("Salazzle"), "Encounter or gender metadata did not load.");
+}
+
+static void PokemonClipboardTransferRoundTrips()
+{
+    var directory = Path.Combine(Path.GetTempPath(), "HebiKaio.Core.Tests", Guid.NewGuid().ToString("N"));
+    var repository = new JsonProfileRepository(Path.Combine(directory, "profiles.json"));
+    var service = new ProfileService(repository); service.CreateProfile("Clipboard");
+    var original = service.CreatePokemon(Draft(133, "Eevee", "Partner", 4));
+    var transfer = new ProfileTransferService(repository);
+    var imported = transfer.ImportPokemonText(transfer.ExportPokemonText(original.Id));
+    Assert(imported.Id != original.Id && imported.SpeciesName == "Eevee" && service.GetOwnedPokemon().Count == 2, "Clipboard transfer did not create an independent copy.");
 }
 
 static ProfileService CreateService(out string path)

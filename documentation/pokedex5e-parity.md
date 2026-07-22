@@ -4,25 +4,25 @@ This document treats Jerakin/Pokedex5E as the baseline product. HebiKaio additio
 
 | Area | Reference pages and controls | HebiKaio status |
 |---|---|---|
-| Shell | Splash/version, slide-out menu, active-screen highlighting, connection indicator | Partial: persistent reference-style navigation implemented; splash and live connection indicator remain |
+| Shell | Splash/version, slide-out menu, active-screen highlighting, connection indicator | Implemented |
 | Profiles | Search, profile slots, create/name, activate, rename, isolated saves | Implemented in desktop shell |
 | Party | Six configurable active slots, page switching, storage jump, edit | Implemented, including configurable active limit |
-| Battle sheet | HP/current/temp controls and bar, EXP bar, loyalty, AC, saves, attributes, skills, type, SR, size, nature, STAB, proficiency, catch rate, hit die, speeds, senses, gender, held item, vulnerabilities/resistances/immunities | Partial: persistent battle meters, core information and controls implemented; type defenses and senses remain |
-| Moves in battle | Move cards, PP current/max controls, attack/damage/type/range/duration/time, details/reset | Implemented except individual reset shortcut |
+| Battle sheet | HP/current/temp controls and bar, EXP bar, loyalty, AC, saves, attributes, skills, type, SR, size, nature, STAB, proficiency, catch rate, hit die, speeds, senses, gender, held item, vulnerabilities/resistances/immunities | Implemented |
+| Moves in battle | Move cards, PP current/max controls, attack/damage/type/range/duration/time, details/reset | Implemented |
 | Features/status | Abilities, feats, status effects (asleep, burned, confused, frozen, paralyzed, poisoned), full rest | Implemented |
-| Pokémon creation | Species, nickname, level, gender, shiny, nature, variant, abilities, feats, skills, moves, held item, six ability scores, HP, ASI/custom ASI, collapsible sections | Implemented as tabbed searchable desktop editor; evolution workflow remains |
-| Pokémon editing | All creation fields, evolution, max HP override, delete/release confirmation | Partial |
-| Selectors | Searchable nature, move, ability, feat, skill, item, variant/fakemon lists; move filters for current/max level, TM/HM, egg, all | Missing |
-| Storage | Search, sorting by index/name/level, rows, party indicator, add, transfer/move/release/share | Partial: search and drag ordering only |
-| Encounter generator | Trainer level, Pokémon level, min/max SR, generation, habitat, type, trainer type, clear/reset, random encounter, add result | Partial: level/SR/generation/type/random/add/reset implemented; habitat and trainer-type filters remain |
+| Pokémon creation | Species, nickname, level, gender, shiny, nature, variant, abilities, feats, skills, moves, held item, six ability scores, HP, ASI/custom ASI, collapsible sections | Implemented as a tabbed searchable desktop editor, with evolution available from storage |
+| Pokémon editing | All creation fields, evolution, max HP override, delete/release confirmation | Implemented |
+| Selectors | Searchable nature, move, ability, feat, skill, item, variant/fakemon lists; move filters for current/max level, TM/HM, egg, all | Implemented with search-ahead selectors and current-level/maximum-level/TM-HM/egg/all move filters |
+| Storage | Search, sorting by index/name/level, rows, party indicator, add, transfer/move/release/share | Implemented |
+| Encounter generator | Trainer level, Pokémon level, min/max SR, generation, habitat, type, trainer type, clear/reset, random encounter, add result | Implemented |
 | Pokédex list | Search, region tabs/counters, encountered-state filters, bulk mark menu | Implemented with composable filters, counters and bulk marking |
 | Pokédex detail | Artwork, index/species/genus/flavor, height/weight/type, seen/caught toggles | Implemented |
 | Trainer modifiers | Nine tabs; per-type attack/damage/STAB; always-STAB types; global attack/damage/STAB/move/ASI/evolution modifiers; six attributes; max active Pokémon; rename | Implemented in consolidated desktop tabs alongside HebiKaio classes/feats/inventory |
-| Settings | Strict gender toggle, fakemon module selection/removal, help, import/paste behavior | Partial: settings and module management implemented; strict-gender enforcement remains |
-| Import/share | Clipboard import/export, QR display/read, platform share, receive page | Partial: file profile and individual Pokémon transfer implemented; clipboard/QR remain |
-| Local network | Host/join/direct/nearby, groups, members, connection status, Pokémon send/receive | Missing |
-| About/version | Version, Android version, changelog/version dialog, support link, share log | Partial: about/version/source links implemented; changelog and share-log remain |
-| Common overlays | Confirmation, info, text input, notification, searchable list, move info, transfer/swap, max-party tutorial | Partial: native dialogs only |
+| Settings | Strict gender toggle, fakemon module selection/removal, help, import/paste behavior | Implemented |
+| Import/share | Clipboard import/export, QR display/read, platform share, receive page | Implemented for desktop with file, clipboard, generated QR, QR-image reading and direct network share |
+| Local network | Host/join/direct/nearby, groups, members, connection status, Pokémon send/receive | Implemented for desktop as direct IP host/join with status and Pokémon send/receive; mobile service groups/nearby roster are replaced by LAN addressing |
+| About/version | Version, Android version, changelog/version dialog, support link, share log | Implemented for desktop with version, changelog, source/support links and copyable diagnostics |
+| Common overlays | Confirmation, info, text input, notification, searchable list, move info, transfer/swap, max-party tutorial | Implemented with native desktop dialogs, searchable selectors, move cards and drag/drop transfer controls |
 
 ## Reference data required for parity
 

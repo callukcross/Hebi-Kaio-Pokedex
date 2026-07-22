@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.IO.Compression;
+using System.Text;
 
 namespace HebiKaio.Core.Profiles;
 
@@ -72,11 +74,24 @@ public sealed class ProfileTransferService
 
     public void ExportPokemon(Guid pokemonId, string path)
     {
+        WriteAtomically(path, ExportPokemonText(pokemonId));
+    }
+
+    public string ExportPokemonText(Guid pokemonId)
+    {
         var store = _repository.Load();
         var profile = store.ActiveProfileId is { } profileId ? store.Profiles.SingleOrDefault(item => item.Id == profileId) : null;
         var pokemon = profile?.Pokemon.SingleOrDefault(item => item.Id == pokemonId)
             ?? throw new KeyNotFoundException("The requested Pokémon does not exist in the active profile.");
-        WriteAtomically(path, JsonSerializer.Serialize(new PokemonTransferPackage { Pokemon = pokemon }, Options));
+        return JsonSerializer.Serialize(new PokemonTransferPackage { Pokemon = pokemon }, Options);
+    }
+
+    public string ExportPokemonQrPayload(Guid pokemonId)
+    {
+        using var output = new MemoryStream();
+        using (var gzip = new GZipStream(output, CompressionLevel.SmallestSize, leaveOpen: true))
+        { var bytes = Encoding.UTF8.GetBytes(ExportPokemonText(pokemonId)); gzip.Write(bytes); }
+        return "HKP1:" + Convert.ToBase64String(output.ToArray());
     }
 
     public IReadOnlyList<OwnedPokemon> GetExportablePokemon()
@@ -88,8 +103,14 @@ public sealed class ProfileTransferService
 
     public OwnedPokemon ImportPokemon(string path)
     {
+        if (!File.Exists(path)) throw new FileNotFoundException("The Pokémon package could not be found.", path);
+        return ImportPokemonText(File.ReadAllText(path));
+    }
+
+    public OwnedPokemon ImportPokemonText(string json)
+    {
         PokemonTransferPackage package;
-        try { package = JsonSerializer.Deserialize<PokemonTransferPackage>(File.ReadAllText(path), Options) ?? throw new InvalidDataException("The Pokémon package is empty."); }
+        try { package = JsonSerializer.Deserialize<PokemonTransferPackage>(json, Options) ?? throw new InvalidDataException("The Pokémon package is empty."); }
         catch (JsonException exception) { throw new InvalidDataException("The Pokémon package is not valid JSON.", exception); }
         if (package.FormatVersion != 1 || package.Pokemon is null || package.Pokemon.SpeciesNumber < 1 || string.IsNullOrWhiteSpace(package.Pokemon.SpeciesName) || package.Pokemon.Level is < 1 or > 20)
             throw new InvalidDataException("This Pokémon package is invalid or unsupported.");
@@ -105,6 +126,17 @@ public sealed class ProfileTransferService
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
         _repository.Save(store);
         return pokemon;
+    }
+
+    public OwnedPokemon ImportPokemonQrPayload(string payload)
+    {
+        if (!payload.StartsWith("HKP1:", StringComparison.Ordinal)) throw new InvalidDataException("This QR code is not a HebiKaio Pokémon transfer.");
+        try
+        {
+            using var input = new MemoryStream(Convert.FromBase64String(payload[5..])); using var gzip = new GZipStream(input, CompressionMode.Decompress); using var reader = new StreamReader(gzip, Encoding.UTF8);
+            return ImportPokemonText(reader.ReadToEnd());
+        }
+        catch (FormatException exception) { throw new InvalidDataException("The QR transfer data is damaged.", exception); }
     }
 
     private static void NormalizeAndValidate(TrainerProfile profile)

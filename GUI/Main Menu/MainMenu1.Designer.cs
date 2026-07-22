@@ -33,6 +33,7 @@
             this.testProfile = new System.Windows.Forms.Button();
             this.pokedexButton = new System.Windows.Forms.Button();
             this.trainerButton = new System.Windows.Forms.Button();
+            this.dataButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // titleText
@@ -89,12 +90,23 @@
             this.trainerButton.Text = "Trainer Sheet";
             this.trainerButton.UseVisualStyleBackColor = true;
             this.trainerButton.Click += new System.EventHandler(this.trainerButton_Click);
+            //
+            // dataButton
+            //
+            this.dataButton.Location = new System.Drawing.Point(238, 198);
+            this.dataButton.Name = "dataButton";
+            this.dataButton.Size = new System.Drawing.Size(112, 28);
+            this.dataButton.TabIndex = 7;
+            this.dataButton.Text = "Import / Export";
+            this.dataButton.UseVisualStyleBackColor = true;
+            this.dataButton.Click += new System.EventHandler(this.dataButton_Click);
             // 
             // MainMenu1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(667, 912);
+            this.Controls.Add(this.dataButton);
             this.Controls.Add(this.trainerButton);
             this.Controls.Add(this.pokedexButton);
             this.Controls.Add(this.testProfile);
@@ -115,6 +127,7 @@
         private System.Windows.Forms.Button testProfile;
         private System.Windows.Forms.Button pokedexButton;
         private System.Windows.Forms.Button trainerButton;
+        private System.Windows.Forms.Button dataButton;
     }
 }
 

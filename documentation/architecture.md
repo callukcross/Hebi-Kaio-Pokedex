@@ -18,7 +18,7 @@ Save data uses versioned JSON and an adjacent backup file. Custom modules should
 2. Pokédex: canonical species dataset, searchable/filterable list, detail view, and seen/caught state. **Implemented for the 810-entry Pokémon 5e reference index.**
 3. Pokémon management: creation/editing, storage, party limits, drag-and-drop ordering, and custom images. **Implemented in the desktop prototype.**
 4. Trainer rules: classes, feats, items, inventory, derived modifiers, and milestone leveling. **Implemented in the desktop prototype.**
-5. Extensibility: import/export and validated custom content modules.
+5. Extensibility: import/export and validated custom content modules. **Implemented for portable profiles and additive feat/item modules in the desktop prototype.**
 6. Distribution: responsive cross-platform UI, migration from the Windows prototype, and PC/mobile packaging.
 
 ## Save compatibility rules
@@ -27,3 +27,8 @@ Save data uses versioned JSON and an adjacent backup file. Custom modules should
 - Add an explicit migration before removing or renaming a persisted field.
 - Never overwrite the only known-good save; preserve the previous file as `.bak`.
 - Store user-selected image paths or copied user assets, not image bytes inside the profile JSON.
+
+## Portable data formats
+
+- Profile exports use a versioned `.hkp` JSON envelope. Imports receive fresh identifiers, preserve valid party membership, and use a unique profile name rather than replacing existing data.
+- Custom modules are versioned JSON files installed under the app data directory. Version 1 modules may add feats and items; malformed, oversized, empty, and duplicate/conflicting content is rejected.

@@ -7,6 +7,7 @@ using System.IO;
 using HebiKaio.Core.Profiles;
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Trainer;
+using HebiKaio.Core.Content;
 
 namespace GUI
 {
@@ -20,6 +21,8 @@ namespace GUI
         // Keep a reference to the new profile dialog when it's shown modelessly
         private NewProfileDialog _newProfileDialog;
         private readonly ProfileService _profileService;
+        private readonly IProfileRepository _profileRepository;
+        private readonly string _moduleDirectory;
 
         public MainMenu1()
         {
@@ -29,7 +32,9 @@ namespace GUI
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "HebiKaioPokedex",
                 "profiles.json");
-            _profileService = new ProfileService(new JsonProfileRepository(savePath));
+            _profileRepository = new JsonProfileRepository(savePath);
+            _profileService = new ProfileService(_profileRepository);
+            _moduleDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HebiKaioPokedex", "modules");
             RefreshActiveProfile();
         }
 
@@ -58,7 +63,7 @@ namespace GUI
             try
             {
                 var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
-                ShowEmbeddedForm(new PokemonPcForm(_profileService, JsonPokemonCatalog.Load(dataPath), TrainerRulesCatalog.Load(dataPath)));
+                ShowEmbeddedForm(new PokemonPcForm(_profileService, JsonPokemonCatalog.Load(dataPath), TrainerRulesCatalog.Load(dataPath, _moduleDirectory)));
             }
             catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
             {
@@ -96,12 +101,20 @@ namespace GUI
                 }
 
                 var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
-                ShowEmbeddedForm(new TrainerForm(_profileService, TrainerRulesCatalog.Load(dataPath)));
+                ShowEmbeddedForm(new TrainerForm(_profileService, TrainerRulesCatalog.Load(dataPath, _moduleDirectory)));
             }
             catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
             {
                 MessageBox.Show(this, exception.Message, "Unable to load trainer rules", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void dataButton_Click(object sender, EventArgs e)
+        {
+            ShowEmbeddedForm(new DataManagementForm(
+                new ProfileTransferService(_profileRepository),
+                new CustomContentService(_moduleDirectory),
+                RefreshActiveProfile));
         }
 
         private void ShowEmbeddedForm(Form form)

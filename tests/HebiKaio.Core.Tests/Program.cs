@@ -1,6 +1,7 @@
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
 using HebiKaio.Core.Trainer;
+using HebiKaio.Core.Content;
 
 var failures = new List<string>();
 Run("profiles persist and become active", ProfilesPersist, failures);
@@ -15,6 +16,9 @@ Run("party size is limited to six", PartySizeIsLimited, failures);
 Run("trainer levels from caught-entry milestones", TrainerMilestonesLevelUp, failures);
 Run("trainer feats and classes derive pokemon effects", TrainerEffectsAreDerived, failures);
 Run("catalog and custom inventory items persist", InventoryPersists, failures);
+Run("profiles export and import without replacing data", ProfileTransferRoundTrips, failures);
+Run("validated custom modules extend trainer catalogs", CustomModulesExtendCatalog, failures);
+Run("conflicting custom content is rejected", ConflictingCustomContentIsRejected, failures);
 
 if (failures.Count > 0)
 {
@@ -204,6 +208,55 @@ static void InventoryPersists()
     Assert(inventory.Single(item => item.Id == custom.Id).IsCustom, "The custom item flag did not persist.");
     service.SetInventoryQuantity(custom.Id, 0);
     Assert(service.GetTrainer().Inventory.All(item => item.Id != custom.Id), "Removing an inventory item failed.");
+}
+
+static void ProfileTransferRoundTrips()
+{
+    var directory = Path.Combine(Path.GetTempPath(), "HebiKaio.Core.Tests", Guid.NewGuid().ToString("N"));
+    var repository = new JsonProfileRepository(Path.Combine(directory, "profiles.json"));
+    var service = new ProfileService(repository);
+    service.CreateProfile("Gloria");
+    var pokemon = service.CreatePokemon(Draft(810, "Grookey", "Twig", 5));
+    service.AddToParty(pokemon.Id);
+    var transfer = new ProfileTransferService(repository);
+    var packagePath = Path.Combine(directory, "gloria.hkp");
+    transfer.ExportActiveProfile(packagePath);
+    var imported = transfer.ImportProfile(packagePath);
+
+    Assert(imported.Name == "Gloria (Imported 2)", "A duplicate import did not receive a unique name.");
+    Assert(imported.Id != service.GetProfiles().Single(profile => profile.Name == "Gloria").Id, "An import reused the source profile id.");
+    Assert(imported.Pokemon.Count == 1 && imported.PartyPokemonIds.SequenceEqual(imported.Pokemon.Select(item => item.Id)), "The imported party did not map to fresh Pokémon ids.");
+}
+
+static void CustomModulesExtendCatalog()
+{
+    var directory = Path.Combine(Path.GetTempPath(), "HebiKaio.Core.Tests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(directory);
+    var source = Path.Combine(directory, "source.json");
+    File.WriteAllText(source, """{"formatVersion":1,"id":"table.homebrew","name":"Table Homebrew","author":"Test","feats":{"Quick Study":"Learn quickly."},"items":{"Field Tent":"Portable shelter."}}""");
+    var installed = Path.Combine(directory, "installed");
+    var service = new CustomContentService(installed);
+    service.Install(source);
+    var rules = TrainerRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"), installed);
+
+    Assert(rules.Feats.ContainsKey("Quick Study") && rules.Items.ContainsKey("Field Tent"), "Installed module entries were not merged into the rules catalog.");
+    service.Remove("table.homebrew");
+    Assert(service.GetInstalledModules().Count == 0, "Removing a custom module failed.");
+}
+
+static void ConflictingCustomContentIsRejected()
+{
+    var directory = Path.Combine(Path.GetTempPath(), "HebiKaio.Core.Tests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(directory);
+    File.WriteAllText(Path.Combine(directory, "conflict.json"), """{"formatVersion":1,"id":"table.conflict","name":"Conflict","feats":{"Alert":"Replacement"},"items":{}}""");
+    try
+    {
+        TrainerRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"), directory);
+        throw new Exception("A module overwrote built-in content.");
+    }
+    catch (InvalidDataException)
+    {
+    }
 }
 
 static ProfileService CreateService(out string path)

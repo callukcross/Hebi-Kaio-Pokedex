@@ -84,11 +84,23 @@ public sealed class ProfileTransferService
         profile.Trainer.Abilities ??= new AbilityScores();
         profile.Trainer.Feats ??= [];
         profile.Trainer.Inventory ??= [];
+        foreach (var pokemon in profile.Pokemon)
+        {
+            pokemon.AttributeIncreases ??= ZeroAbilities();
+            pokemon.CustomAttributes ??= ZeroAbilities();
+            pokemon.Abilities ??= [];
+            pokemon.Feats ??= [];
+            pokemon.Skills ??= [];
+            pokemon.Moves ??= [];
+            pokemon.Statuses ??= [];
+        }
         if (profile.Pokedex.Keys.Any(number => number < 1) ||
             profile.Pokemon.Any(pokemon => pokemon.SpeciesNumber < 1 || pokemon.Level is < 1 or > 20) ||
             profile.Trainer.Inventory.Any(item => string.IsNullOrWhiteSpace(item.Name) || item.Quantity is < 1 or > 999))
             throw new InvalidDataException("The imported profile contains invalid game data.");
     }
+
+    private static AbilityScores ZeroAbilities() => new() { Strength = 0, Dexterity = 0, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 };
 
     private static string MakeUniqueName(string requested, IEnumerable<TrainerProfile> profiles)
     {

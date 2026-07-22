@@ -2,6 +2,7 @@ using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
 using HebiKaio.Core.Trainer;
 using HebiKaio.Core.Content;
+using HebiKaio.Core.Rules;
 
 var failures = new List<string>();
 Run("profiles persist and become active", ProfilesPersist, failures);
@@ -19,6 +20,8 @@ Run("catalog and custom inventory items persist", InventoryPersists, failures);
 Run("profiles export and import without replacing data", ProfileTransferRoundTrips, failures);
 Run("validated custom modules extend trainer catalogs", CustomModulesExtendCatalog, failures);
 Run("conflicting custom content is rejected", ConflictingCustomContentIsRejected, failures);
+Run("complete reference rules catalog loads", CompleteReferenceRulesLoad, failures);
+Run("reference pokemon initialize and battle state persists", ReferencePokemonBattleStatePersists, failures);
 
 if (failures.Count > 0)
 {
@@ -257,6 +260,41 @@ static void ConflictingCustomContentIsRejected()
     catch (InvalidDataException)
     {
     }
+}
+
+static void CompleteReferenceRulesLoad()
+{
+    var rules = ReferenceRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"));
+    var bulbasaur = rules.FindPokemon("Bulbasaur");
+    var tackle = rules.FindMove("Tackle");
+    Assert(rules.Pokemon.Count == 810 && rules.Moves.Count == 675, "The complete Pokémon or move dataset was not loaded.");
+    Assert(bulbasaur?.Attributes["STR"] == 13 && bulbasaur.StartingMoves.Contains("Tackle"), "Complete Pokémon combat data was not parsed.");
+    Assert(tackle?.PowerPoints == 20 && tackle.IsAttack && tackle.PowerAttributes.Contains("STR"), "Move combat data was not parsed.");
+    Assert(rules.Abilities.ContainsKey("Overgrow") && rules.Natures.ContainsKey("Hardy") && rules.PokedexDetails[1].Genus.Contains("Seed"), "Supporting reference rule data was not parsed.");
+}
+
+static void ReferencePokemonBattleStatePersists()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Ash");
+    var rules = ReferenceRulesCatalog.Load(Path.Combine(AppContext.BaseDirectory, "data", "p5e"));
+    var pokemon = service.CreatePokemon(Draft(1, "Bulbasaur", "Buddy", 5), rules);
+    Assert(pokemon.Abilities.Contains("Overgrow") && pokemon.Moves.Any(move => move.Name == "Tackle" && move.CurrentPowerPoints == 20), "Reference abilities or moves were not initialized.");
+    service.UpdateBattleState(pokemon.Id, new PokemonBattleUpdate
+    {
+        CurrentHp = 2,
+        TemporaryHp = 4,
+        Loyalty = 3,
+        Statuses = [PokemonStatus.Poisoned],
+        MovePowerPoints = new Dictionary<string, int> { ["Tackle"] = 7 }
+    }, rules);
+    var updated = service.GetOwnedPokemon().Single();
+    Assert(updated.CurrentHp == 2 && updated.TemporaryHp == 4 && updated.Statuses.Contains(PokemonStatus.Poisoned), "Battle meters or status did not persist.");
+    Assert(updated.Moves.Single(move => move.Name == "Tackle").CurrentPowerPoints == 7, "Move PP did not persist.");
+    service.AddToParty(updated.Id);
+    service.HealParty(rules);
+    var healed = service.GetOwnedPokemon().Single();
+    Assert(healed.CurrentHp > 2 && healed.TemporaryHp == 0 && healed.Statuses.Count == 0 && healed.Moves.Single(move => move.Name == "Tackle").CurrentPowerPoints == 20, "Full rest did not restore party battle state.");
 }
 
 static ProfileService CreateService(out string path)

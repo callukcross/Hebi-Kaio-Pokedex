@@ -17,6 +17,6 @@
     <ProjectReference Include="../../src/HebiKaio.Core/HebiKaio.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="../../data/p5e/*.json" Link="data/p5e/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../data/p5e/**/*.json" Link="data/p5e/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

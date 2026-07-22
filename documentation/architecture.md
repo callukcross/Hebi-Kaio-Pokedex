@@ -10,6 +10,8 @@ The reference Pokedex5E application is a mature Defold/Lua project. Its reusable
 
 All game and application rules live in `src/HebiKaio.Core`, which has no dependency on Windows Forms. Platform front ends call this core. The existing Windows Forms project remains a temporary desktop host while the team validates workflows. A later UI milestone can use .NET MAUI or another cross-platform shell without migrating save rules or domain logic again.
 
+The complete reference-product inventory and parity status live in `documentation/pokedex5e-parity.md`. Pokedex5E is the baseline feature set; HebiKaio-specific classes, milestones, modules, and portability features are additive.
+
 Save data uses versioned JSON and an adjacent backup file. Custom modules should eventually use the same versioned, data-driven approach and must not require recompiling the UI.
 
 ## Delivery phases

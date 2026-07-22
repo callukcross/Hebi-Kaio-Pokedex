@@ -1,6 +1,7 @@
 namespace HebiKaio.Core.Profiles;
 
 using HebiKaio.Core.Trainer;
+using HebiKaio.Core.Rules;
 
 public sealed class ProfileService
 {
@@ -129,6 +130,62 @@ public sealed class ProfileService
         profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
         _repository.Save(store);
         return ClonePokemon(pokemon);
+    }
+
+    public OwnedPokemon CreatePokemon(PokemonDraft draft, ReferenceRulesCatalog rules)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        var created = CreatePokemon(draft);
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        var pokemon = profile.Pokemon.Single(item => item.Id == created.Id);
+        PokemonRulesService.Initialize(pokemon, rules);
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+        return ClonePokemon(pokemon);
+    }
+
+    public OwnedPokemon UpdateBattleState(Guid pokemonId, PokemonBattleUpdate update, ReferenceRulesCatalog rules)
+    {
+        ArgumentNullException.ThrowIfNull(update);
+        ArgumentNullException.ThrowIfNull(rules);
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        var pokemon = profile.Pokemon.SingleOrDefault(item => item.Id == pokemonId)
+            ?? throw new KeyNotFoundException("The requested Pokémon does not exist.");
+        var species = rules.FindPokemon(pokemon.SpeciesName)
+            ?? throw new KeyNotFoundException("The Pokémon rules record does not exist.");
+        var maximumHp = PokemonRulesService.GetMaximumHp(pokemon, species, rules);
+        if (update.CurrentHp is { } hp) pokemon.CurrentHp = Math.Clamp(hp, 0, maximumHp);
+        if (update.TemporaryHp is { } temporaryHp) pokemon.TemporaryHp = Math.Max(0, temporaryHp);
+        if (update.Loyalty is { } loyalty) pokemon.Loyalty = Math.Clamp(loyalty, -3, 3);
+        if (update.Experience is { } experience) pokemon.Experience = Math.Max(0, experience);
+        if (update.Statuses is not null) pokemon.Statuses = update.Statuses.ToHashSet();
+        if (update.MovePowerPoints is not null)
+            foreach (var move in pokemon.Moves)
+                if (update.MovePowerPoints.TryGetValue(move.Name, out var pp))
+                    move.CurrentPowerPoints = Math.Clamp(pp, 0, rules.FindMove(move.Name)?.PowerPoints ?? Math.Max(0, pp));
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+        return ClonePokemon(pokemon);
+    }
+
+    public void HealParty(ReferenceRulesCatalog rules)
+    {
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        foreach (var pokemon in profile.Pokemon.Where(item => profile.PartyPokemonIds.Contains(item.Id)))
+        {
+            var species = rules.FindPokemon(pokemon.SpeciesName);
+            if (species is null) continue;
+            pokemon.CurrentHp = PokemonRulesService.GetMaximumHp(pokemon, species, rules);
+            pokemon.TemporaryHp = 0;
+            pokemon.Statuses.Clear();
+            foreach (var move in pokemon.Moves)
+                move.CurrentPowerPoints = rules.FindMove(move.Name)?.PowerPoints ?? move.CurrentPowerPoints;
+        }
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
     }
 
     public OwnedPokemon UpdatePokemon(Guid pokemonId, PokemonDraft draft)
@@ -357,7 +414,23 @@ public sealed class ProfileService
         Nickname = pokemon.Nickname,
         Form = pokemon.Form,
         Level = pokemon.Level,
-        CustomImagePath = pokemon.CustomImagePath
+        CustomImagePath = pokemon.CustomImagePath,
+        Gender = pokemon.Gender,
+        IsShiny = pokemon.IsShiny,
+        Nature = pokemon.Nature,
+        Experience = pokemon.Experience,
+        CurrentHp = pokemon.CurrentHp,
+        TemporaryHp = pokemon.TemporaryHp,
+        MaximumHpOverride = pokemon.MaximumHpOverride,
+        Loyalty = pokemon.Loyalty,
+        HeldItem = pokemon.HeldItem,
+        AttributeIncreases = CloneAbilities(pokemon.AttributeIncreases),
+        CustomAttributes = CloneAbilities(pokemon.CustomAttributes),
+        Abilities = pokemon.Abilities.ToList(),
+        Feats = pokemon.Feats.ToList(),
+        Skills = pokemon.Skills.ToList(),
+        Moves = pokemon.Moves.Select(move => new OwnedPokemonMove { Name = move.Name, CurrentPowerPoints = move.CurrentPowerPoints }).ToList(),
+        Statuses = pokemon.Statuses.ToHashSet()
     };
 
     private static TrainerCharacter CloneTrainer(TrainerCharacter trainer) => new()

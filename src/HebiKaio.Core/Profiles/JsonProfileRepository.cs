@@ -77,9 +77,24 @@ public sealed class JsonProfileRepository : IProfileRepository
             profile.Trainer.Abilities ??= new AbilityScores();
             profile.Trainer.Feats ??= [];
             profile.Trainer.Inventory ??= [];
+            foreach (var pokemon in profile.Pokemon)
+            {
+                pokemon.Nature = string.IsNullOrWhiteSpace(pokemon.Nature) ? "Hardy" : pokemon.Nature;
+                pokemon.AttributeIncreases ??= ZeroAbilities();
+                pokemon.CustomAttributes ??= ZeroAbilities();
+                pokemon.Abilities ??= [];
+                pokemon.Feats ??= [];
+                pokemon.Skills ??= [];
+                pokemon.Moves ??= [];
+                pokemon.Statuses ??= [];
+                pokemon.CurrentHp = Math.Max(0, pokemon.CurrentHp);
+                pokemon.TemporaryHp = Math.Max(0, pokemon.TemporaryHp);
+            }
         }
         return store;
     }
+
+    private static AbilityScores ZeroAbilities() => new() { Strength = 0, Dexterity = 0, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 };
 
     private static bool IsValidSave(string path)
     {

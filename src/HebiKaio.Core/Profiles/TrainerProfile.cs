@@ -43,6 +43,47 @@ public sealed class OwnedPokemon
     public int Level { get; set; } = 1;
 
     public string? CustomImagePath { get; set; }
+
+    public PokemonGender Gender { get; set; }
+
+    public bool IsShiny { get; set; }
+
+    public string Nature { get; set; } = "Hardy";
+
+    public int Experience { get; set; }
+
+    public int CurrentHp { get; set; } = 1;
+
+    public int TemporaryHp { get; set; }
+
+    public int? MaximumHpOverride { get; set; }
+
+    public int Loyalty { get; set; }
+
+    public string? HeldItem { get; set; }
+
+    public AbilityScores AttributeIncreases { get; set; } = new() { Strength = 0, Dexterity = 0, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 };
+
+    public AbilityScores CustomAttributes { get; set; } = new() { Strength = 0, Dexterity = 0, Constitution = 0, Intelligence = 0, Wisdom = 0, Charisma = 0 };
+
+    public List<string> Abilities { get; set; } = [];
+
+    public List<string> Feats { get; set; } = [];
+
+    public List<string> Skills { get; set; } = [];
+
+    public List<OwnedPokemonMove> Moves { get; set; } = [];
+
+    public HashSet<PokemonStatus> Statuses { get; set; } = [];
+}
+
+public enum PokemonGender { Unspecified, Genderless, Male, Female }
+public enum PokemonStatus { Asleep, Burned, Confused, Frozen, Paralyzed, Poisoned }
+
+public sealed class OwnedPokemonMove
+{
+    public string Name { get; set; } = string.Empty;
+    public int CurrentPowerPoints { get; set; }
 }
 
 public sealed class TrainerCharacter

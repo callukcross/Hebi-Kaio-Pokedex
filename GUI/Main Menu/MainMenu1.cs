@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using System.Drawing;
+using System.IO;
+using HebiKaio.Core.Profiles;
 
 namespace GUI
 {
@@ -15,10 +17,34 @@ namespace GUI
 
         // Keep a reference to the new profile dialog when it's shown modelessly
         private NewProfileDialog _newProfileDialog;
+        private readonly ProfileService _profileService;
 
         public MainMenu1()
         {
             InitializeComponent();
+
+            var savePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HebiKaioPokedex",
+                "profiles.json");
+            _profileService = new ProfileService(new JsonProfileRepository(savePath));
+            RefreshActiveProfile();
+        }
+
+        private void RefreshActiveProfile()
+        {
+            try
+            {
+                var activeProfile = _profileService.GetActiveProfile();
+                testProfile.Text = activeProfile == null ? "No Active Profile" : activeProfile.Name;
+                testProfile.Enabled = activeProfile != null;
+            }
+            catch (Exception exception)
+            {
+                testProfile.Text = "Profile Save Error";
+                testProfile.Enabled = false;
+                MessageBox.Show(this, exception.Message, "Unable to load profiles", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -130,8 +156,16 @@ namespace GUI
                 }
                 else
                 {
-                    // TODO: Insert profile creation logic here.
-                    MessageBox.Show(this, $"Profile '{trimmed}' created.", "Profile Created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try
+                    {
+                        var profile = _profileService.CreateProfile(trimmed);
+                        RefreshActiveProfile();
+                        MessageBox.Show(this, $"Profile '{profile.Name}' created and saved.", "Profile Created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception exception) when (exception is ArgumentException || exception is InvalidOperationException || exception is IOException)
+                    {
+                        MessageBox.Show(this, exception.Message, "Unable to create profile", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 }
             };
 

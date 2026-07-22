@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/HebiKaio.Core/HebiKaio.Core.csproj" />
+  <Project Path="tests/HebiKaio.Core.Tests/HebiKaio.Core.Tests.csproj" />
+  <Project Path="GUI/Main Menu/GUI.csproj" />
+</Solution>

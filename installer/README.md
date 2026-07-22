@@ -8,4 +8,4 @@ The script produces three self-contained Windows executables:
 - `artifacts/windows-publish/HebiKaioPokedex.exe`: the unpackaged application executable.
 - `artifacts/windows-publish/Uninstall-HebiKaio-Pokedex.exe`: the uninstaller included in the installed application directory.
 
-The installer performs a per-user installation in `%LOCALAPPDATA%\Programs\HebiKaio Pokedex`, creates Start Menu and optional Desktop shortcuts, and registers the app in Windows Installed Apps. User profiles and modules remain under `%LOCALAPPDATA%\HebiKaioPokedex` when uninstalling so an accidental uninstall does not destroy user data.
+The installer provides a per-user setup wizard with a selectable writable destination, shortcut options, progress reporting, and a completion page. It defaults to `%LOCALAPPDATA%\Programs\HebiKaio Pokedex`, never requests elevation, and rejects protected destinations that would require administrator privileges. It also registers the app in Windows Installed Apps. User profiles and modules remain under `%LOCALAPPDATA%\HebiKaioPokedex` when uninstalling so an accidental uninstall does not destroy user data.

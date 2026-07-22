@@ -37,7 +37,7 @@ namespace GUI
             try
             {
                 var activeProfile = _profileService.GetActiveProfile();
-                testProfile.Text = activeProfile == null ? "No Active Profile" : activeProfile.Name;
+                testProfile.Text = activeProfile == null ? "No Active Profile" : $"{activeProfile.Name}'s PC";
                 testProfile.Enabled = activeProfile != null;
             }
             catch (Exception exception)
@@ -54,7 +54,15 @@ namespace GUI
 
         private void testProfile_Click(object sender, EventArgs e)
         {
-            ShowEmbeddedForm(new ActiveParty());
+            try
+            {
+                var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
+                ShowEmbeddedForm(new PokemonPcForm(_profileService, JsonPokemonCatalog.Load(dataPath)));
+            }
+            catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
+            {
+                MessageBox.Show(this, exception.Message, "Unable to load Pokémon PC", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void pokedexButton_Click(object sender, EventArgs e)

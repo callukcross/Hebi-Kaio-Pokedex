@@ -8,6 +8,9 @@ Run("a good backup survives primary-save corruption", BackupSurvivesCorruption, 
 Run("pokedex state persists per active profile", PokedexStatePersists, failures);
 Run("the reference pokedex catalog loads", CatalogLoads, failures);
 Run("pokedex filters compose", FiltersCompose, failures);
+Run("pokemon creation and editing persist", PokemonLifecyclePersists, failures);
+Run("party membership and ordering persist", PartyManagementPersists, failures);
+Run("party size is limited to six", PartySizeIsLimited, failures);
 
 if (failures.Count > 0)
 {
@@ -92,6 +95,67 @@ static void CatalogLoads()
     Assert(catalog.GetAll().Count == 810, "The canonical catalog did not load every species/form entry.");
     Assert(bulbasaur?.Name == "Bulbasaur" && bulbasaur.Types.Contains("Grass"), "Bulbasaur data was not mapped correctly.");
 }
+
+static void PokemonLifecyclePersists()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Dawn");
+    var created = service.CreatePokemon(Draft(393, "Piplup", "Pip", 4));
+
+    Assert(service.GetPokedexState(393) == PokedexEntryState.Caught, "Creating a Pokémon did not mark the species caught.");
+    var updated = service.UpdatePokemon(created.Id, Draft(393, "Piplup", "Emperor", 7));
+    Assert(updated.Nickname == "Emperor" && updated.Level == 7, "The Pokémon edits were not returned.");
+    Assert(service.GetOwnedPokemon().Single().Nickname == "Emperor", "The Pokémon edits did not persist.");
+
+    service.DeletePokemon(created.Id);
+    Assert(service.GetOwnedPokemon().Count == 0, "The Pokémon was not deleted from storage.");
+}
+
+static void PartyManagementPersists()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Serena");
+    var first = service.CreatePokemon(Draft(650, "Chespin", null, 3));
+    var second = service.CreatePokemon(Draft(653, "Fennekin", null, 3));
+    service.AddToParty(first.Id);
+    service.AddToParty(second.Id);
+    service.ReorderPartyPokemon(second.Id, 0);
+
+    var party = service.GetPartyPokemon();
+    Assert(party.Count == 2 && party[0].Id == second.Id && party[1].Id == first.Id, "Party order did not persist.");
+
+    service.RemoveFromParty(second.Id);
+    Assert(service.GetPartyPokemon().Single().Id == first.Id, "Removing a Pokémon from the party failed.");
+}
+
+static void PartySizeIsLimited()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("Lillie");
+    for (var index = 1; index <= ProfileService.MaximumPartySize; index++)
+    {
+        var pokemon = service.CreatePokemon(Draft(index, $"Species {index}", null, 1));
+        service.AddToParty(pokemon.Id);
+    }
+
+    var extra = service.CreatePokemon(Draft(7, "Species 7", null, 1));
+    try
+    {
+        service.AddToParty(extra.Id);
+        throw new Exception("A seventh party Pokémon was accepted.");
+    }
+    catch (InvalidOperationException)
+    {
+    }
+}
+
+static PokemonDraft Draft(int number, string species, string? nickname, int level) => new()
+{
+    SpeciesNumber = number,
+    SpeciesName = species,
+    Nickname = nickname,
+    Level = level
+};
 
 static ProfileService CreateService(out string path)
 {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using HebiKaio.Core.Pokedex;
 using HebiKaio.Core.Profiles;
@@ -190,7 +189,7 @@ namespace GUI
 
             _image.Image?.Dispose();
             _image.Image = null;
-            var imagePath = FindImage(species.Name);
+            var imagePath = PokemonArtworkLocator.Find(species.Name);
             if (imagePath != null)
             {
                 using var source = Image.FromFile(imagePath);
@@ -233,32 +232,5 @@ namespace GUI
             _ => "Standalone"
         };
 
-        private static string FindImage(string speciesName)
-        {
-            var slug = CreateSlug(speciesName);
-            var directory = new DirectoryInfo(AppContext.BaseDirectory);
-            while (directory != null)
-            {
-                var candidate = Path.Combine(directory.FullName, "models", "Pokemon Official Art", "PokemonMainArt", slug + ".png");
-                if (File.Exists(candidate))
-                    return candidate;
-                directory = directory.Parent;
-            }
-
-            return null;
-        }
-
-        private static string CreateSlug(string value)
-        {
-            var builder = new StringBuilder();
-            foreach (var character in value.ToLowerInvariant())
-            {
-                if (char.IsLetterOrDigit(character))
-                    builder.Append(character);
-                else if ((character == ' ' || character == '.' || character == ':' || character == '’' || character == '\'') && builder.Length > 0 && builder[^1] != '-')
-                    builder.Append('-');
-            }
-            return builder.ToString().Trim('-');
-        }
     }
 }

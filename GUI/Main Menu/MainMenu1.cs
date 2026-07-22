@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
 using HebiKaio.Core.Profiles;
+using HebiKaio.Core.Pokedex;
 
 namespace GUI
 {
@@ -53,46 +54,51 @@ namespace GUI
 
         private void testProfile_Click(object sender, EventArgs e)
         {
-            // If already showing embedded profile, do nothing.
+            ShowEmbeddedForm(new ActiveParty());
+        }
+
+        private void pokedexButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_profileService.GetActiveProfile() == null)
+                {
+                    MessageBox.Show(this, "Create a trainer profile before opening the Pokédex.", "Profile required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
+                ShowEmbeddedForm(new PokedexForm(_profileService, JsonPokemonCatalog.Load(dataPath)));
+            }
+            catch (Exception exception) when (exception is IOException || exception is InvalidDataException)
+            {
+                MessageBox.Show(this, exception.Message, "Unable to load Pokédex", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ShowEmbeddedForm(Form form)
+        {
             if (_embeddedProfile != null)
                 return;
 
-            // Snapshot existing top-level controls so we can restore them later.
             _mainControls = Controls.Cast<Control>().ToList();
-
-            // Remove them from the form (do not Dispose; we'll re-add them).
-            // Suspend layout while we clear and add to avoid repeated layout passes.
-            this.SuspendLayout();
+            SuspendLayout();
             try
             {
                 Controls.Clear();
-
-                // Create the PokemonActivePartyScreen form and embed it as a child control.
-                var partyForm = new ActiveParty
-                {
-                    TopLevel = false,                       // make it a child control
-                    FormBorderStyle = FormBorderStyle.None, // remove window chrome
-                    Dock = DockStyle.Fill                    // fill the client area exactly
-                };
-
-                // When partyForm is closed (radial button will call Close()),
-                // restore the original controls. Use BeginInvoke to avoid re-entrancy issues.
-                partyForm.FormClosed += (s, args) =>
-                {
-                    BeginInvoke((Action)(() => RestoreMainView()));
-                };
-
-                // Add the embedded form to this form's Controls and show it.
-                Controls.Add(partyForm);
-                _embeddedProfile = partyForm;
-                partyForm.Show();
+                form.TopLevel = false;
+                form.FormBorderStyle = FormBorderStyle.None;
+                form.Dock = DockStyle.Fill;
+                form.FormClosed += (s, args) => BeginInvoke((Action)(RestoreMainView));
+                Controls.Add(form);
+                _embeddedProfile = form;
+                form.Show();
             }
             finally
             {
-                this.ResumeLayout();
-                // Force immediate repaint to reduce visual artifacts when switching pages quickly.
-                this.Invalidate(true);
-                this.Update();
+                ResumeLayout();
+                Invalidate(true);
+                Update();
             }
         }
 

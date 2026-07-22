@@ -5,6 +5,8 @@ var failures = new List<string>();
 Run("profiles persist and become active", ProfilesPersist, failures);
 Run("duplicate profile names are rejected", DuplicateNamesAreRejected, failures);
 Run("a good backup survives primary-save corruption", BackupSurvivesCorruption, failures);
+Run("pokedex state persists per active profile", PokedexStatePersists, failures);
+Run("the reference pokedex catalog loads", CatalogLoads, failures);
 Run("pokedex filters compose", FiltersCompose, failures);
 
 if (failures.Count > 0)
@@ -69,6 +71,26 @@ static void FiltersCompose()
         .ToList();
 
     Assert(result.Count == 1 && result[0].Name == "Bulbasaur", "The composed filter returned the wrong species.");
+}
+
+static void PokedexStatePersists()
+{
+    var service = CreateService(out _);
+    service.CreateProfile("May");
+    service.SetPokedexState(252, PokedexEntryState.Caught);
+    Assert(service.GetPokedexState(252) == PokedexEntryState.Caught, "The caught state was not persisted.");
+
+    service.SetPokedexState(252, PokedexEntryState.Unknown);
+    Assert(service.GetPokedexState(252) == PokedexEntryState.Unknown, "Clearing the state did not persist.");
+}
+
+static void CatalogLoads()
+{
+    var dataPath = Path.Combine(AppContext.BaseDirectory, "data", "p5e");
+    var catalog = JsonPokemonCatalog.Load(dataPath);
+    var bulbasaur = catalog.FindByNumber(1);
+    Assert(catalog.GetAll().Count == 810, "The canonical catalog did not load every species/form entry.");
+    Assert(bulbasaur?.Name == "Bulbasaur" && bulbasaur.Types.Contains("Grass"), "Bulbasaur data was not mapped correctly.");
 }
 
 static ProfileService CreateService(out string path)

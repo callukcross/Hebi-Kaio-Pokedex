@@ -31,6 +31,7 @@
             this.titleText = new System.Windows.Forms.TextBox();
             this.newProfile = new System.Windows.Forms.Button();
             this.testProfile = new System.Windows.Forms.Button();
+            this.pokedexButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // titleText
@@ -65,12 +66,24 @@
             this.testProfile.Text = "Test Profile";
             this.testProfile.UseVisualStyleBackColor = true;
             this.testProfile.Click += new System.EventHandler(this.testProfile_Click);
+            //
+            // pokedexButton
+            //
+            this.pokedexButton.Location = new System.Drawing.Point(238, 108);
+            this.pokedexButton.Margin = new System.Windows.Forms.Padding(2);
+            this.pokedexButton.Name = "pokedexButton";
+            this.pokedexButton.Size = new System.Drawing.Size(112, 28);
+            this.pokedexButton.TabIndex = 5;
+            this.pokedexButton.Text = "Open Pokédex";
+            this.pokedexButton.UseVisualStyleBackColor = true;
+            this.pokedexButton.Click += new System.EventHandler(this.pokedexButton_Click);
             // 
             // MainMenu1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(667, 912);
+            this.Controls.Add(this.pokedexButton);
             this.Controls.Add(this.testProfile);
             this.Controls.Add(this.newProfile);
             this.Controls.Add(this.titleText);
@@ -87,6 +100,7 @@
         private System.Windows.Forms.TextBox titleText;
         private System.Windows.Forms.Button newProfile;
         private System.Windows.Forms.Button testProfile;
+        private System.Windows.Forms.Button pokedexButton;
     }
 }
 

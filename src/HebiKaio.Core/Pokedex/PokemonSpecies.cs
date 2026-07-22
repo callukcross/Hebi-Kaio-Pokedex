@@ -11,6 +11,12 @@ public sealed class PokemonSpecies
     public string Region { get; init; } = string.Empty;
 
     public EvolutionStage EvolutionStage { get; init; }
+
+    public double SpeciesRating { get; init; }
+
+    public int MinimumWildLevel { get; init; }
+
+    public IReadOnlyList<string> EvolvesInto { get; init; } = [];
 }
 
 public enum EvolutionStage

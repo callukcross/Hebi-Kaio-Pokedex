@@ -57,6 +57,45 @@ public sealed class ProfileService
         _repository.Save(store);
     }
 
+    public PokedexEntryState GetPokedexState(int speciesNumber)
+    {
+        var profile = GetRequiredActiveProfile(_repository.Load());
+        return profile.Pokedex.TryGetValue(speciesNumber, out var state)
+            ? state
+            : PokedexEntryState.Unknown;
+    }
+
+    public IReadOnlyDictionary<int, PokedexEntryState> GetPokedexStates()
+    {
+        var profile = GetRequiredActiveProfile(_repository.Load());
+        return new Dictionary<int, PokedexEntryState>(profile.Pokedex);
+    }
+
+    public void SetPokedexState(int speciesNumber, PokedexEntryState state)
+    {
+        if (speciesNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(speciesNumber));
+
+        var store = _repository.Load();
+        var profile = GetRequiredActiveProfile(store);
+        if (state == PokedexEntryState.Unknown)
+            profile.Pokedex.Remove(speciesNumber);
+        else
+            profile.Pokedex[speciesNumber] = state;
+
+        profile.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        _repository.Save(store);
+    }
+
+    private static TrainerProfile GetRequiredActiveProfile(ProfileStore store)
+    {
+        if (store.ActiveProfileId is not { } activeId)
+            throw new InvalidOperationException("Create or select a trainer profile first.");
+
+        return store.Profiles.SingleOrDefault(profile => profile.Id == activeId)
+            ?? throw new InvalidOperationException("The active trainer profile no longer exists.");
+    }
+
     private static string NormalizeName(string name)
     {
         var normalized = name?.Trim() ?? string.Empty;

@@ -4,6 +4,7 @@ using HebiKaio.Core.Profiles;
 var failures = new List<string>();
 Run("profiles persist and become active", ProfilesPersist, failures);
 Run("duplicate profile names are rejected", DuplicateNamesAreRejected, failures);
+Run("a good backup survives primary-save corruption", BackupSurvivesCorruption, failures);
 Run("pokedex filters compose", FiltersCompose, failures);
 
 if (failures.Count > 0)
@@ -38,6 +39,20 @@ static void DuplicateNamesAreRejected()
     catch (InvalidOperationException)
     {
     }
+}
+
+static void BackupSurvivesCorruption()
+{
+    var service = CreateService(out var path);
+    service.CreateProfile("Red");
+    service.CreateProfile("Blue");
+    File.WriteAllText(path, "{ corrupt json");
+
+    service.CreateProfile("Leaf");
+
+    var backupService = new ProfileService(new JsonProfileRepository(path + ".bak"));
+    var backupNames = backupService.GetProfiles().Select(profile => profile.Name).ToList();
+    Assert(backupNames.Contains("Red"), "The last known-good backup was overwritten by corrupt data.");
 }
 
 static void FiltersCompose()

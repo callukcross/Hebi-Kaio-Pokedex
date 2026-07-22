@@ -53,7 +53,7 @@ public sealed class JsonProfileRepository : IProfileRepository
         var json = JsonSerializer.Serialize(store, SerializerOptions);
         File.WriteAllText(temporaryPath, json);
 
-        if (File.Exists(_filePath))
+        if (File.Exists(_filePath) && IsValidSave(_filePath))
             File.Copy(_filePath, GetBackupPath(), overwrite: true);
 
         File.Move(temporaryPath, _filePath, overwrite: true);
@@ -69,6 +69,19 @@ public sealed class JsonProfileRepository : IProfileRepository
 
         store.Profiles ??= [];
         return store;
+    }
+
+    private static bool IsValidSave(string path)
+    {
+        try
+        {
+            Read(path);
+            return true;
+        }
+        catch (Exception exception) when (exception is JsonException or IOException)
+        {
+            return false;
+        }
     }
 
     private string GetBackupPath() => _filePath + ".bak";

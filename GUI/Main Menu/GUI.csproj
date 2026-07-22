@@ -6,7 +6,10 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <RootNamespace>GUI</RootNamespace>
-    <AssemblyName>GUI</AssemblyName>
+    <AssemblyName>HebiKaioPokedex</AssemblyName>
+    <Version>0.1.0</Version>
+    <Product>HebiKaio Pokedex</Product>
+    <Company>HebiKaio</Company>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ApplicationIcon />
   </PropertyGroup>

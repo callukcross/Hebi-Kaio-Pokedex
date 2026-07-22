@@ -1,0 +1,29 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  package:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Build and verify
+        run: dotnet run --project tests/HebiKaio.Core.Tests/HebiKaio.Core.Tests.csproj
+      - name: Package Windows installer
+        shell: powershell
+        run: ./installer/build-installer.ps1
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: HebiKaio-Pokedex-Windows-x64
+          path: artifacts/windows-installer/Install-HebiKaio-Pokedex.exe
+          if-no-files-found: error

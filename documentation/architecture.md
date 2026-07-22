@@ -19,7 +19,7 @@ Save data uses versioned JSON and an adjacent backup file. Custom modules should
 3. Pokémon management: creation/editing, storage, party limits, drag-and-drop ordering, and custom images. **Implemented in the desktop prototype.**
 4. Trainer rules: classes, feats, items, inventory, derived modifiers, and milestone leveling. **Implemented in the desktop prototype.**
 5. Extensibility: import/export and validated custom content modules. **Implemented for portable profiles and additive feat/item modules in the desktop prototype.**
-6. Distribution: responsive cross-platform UI, migration from the Windows prototype, and PC/mobile packaging.
+6. Distribution: responsive cross-platform UI, migration from the Windows prototype, and PC/mobile packaging. **Windows x64 self-contained application, installer, and uninstaller implemented; cross-platform UI and mobile packaging remain.**
 
 ## Save compatibility rules
 
